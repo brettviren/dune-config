@@ -70,3 +70,18 @@ resolves at runtime.
 
 > Spack packaging (a recipe + `spack develop` entry) is tracked separately as
 > beads **ddm-4pz.17**; for now the devel/ superbuild is the build route.
+
+# Using
+
+The `phlex` program currently [does not support Jsonnet TLAs nor search
+paths](https://github.com/orgs/Framework-R-D/discussions/522).  The
+configuration here is designed around providing TLAs, either to Phlex Jsonnet or
+via Phlex Jsonnet to WCT Jsonnet.  Until `phlex` gets this support, there are
+two options.
+
+1. Use `phlexed` instead of `phlex` to use its added TLA and a search path
+   feature (otherwise identical to `phlex`).  This searches `PHLEXED_PATH` in
+   addition to paths given on `-J/--jpath` CLI args.
+
+2. Use `wcsonnet` or bare `jsonnet` to compile Jsonnet to JSON, giving TLAs and
+   using search paths.  Give resulting JSON file to `phlex`.
