@@ -1,0 +1,294 @@
+[
+   {
+      "data": { },
+      "name": "wcphlex_deposet_source",
+      "type": "DepoSetBoundarySource"
+   },
+   {
+      "data": {
+         "drifter": "Drifter:drifter_anode4"
+      },
+      "name": "deposet_drifter_anode4",
+      "type": "DepoSetDrifter"
+   },
+   {
+      "data": {
+         "anode": "AnodePlane:anode4",
+         "dft": "FftwDFT:dft_anode4",
+         "drift_speed": 0.0014730000000000001,
+         "first_frame_number": 0,
+         "fluctuate": true,
+         "nsigma": 3,
+         "pirs": [
+            "PlaneImpactResponse:pir0_anode4",
+            "PlaneImpactResponse:pir1_anode4",
+            "PlaneImpactResponse:pir2_anode4"
+         ],
+         "readout_time": 3123000,
+         "rng": "Random:rng_anode4",
+         "start_time": -372878.47929395788,
+         "tick": 500
+      },
+      "name": "transform_anode4",
+      "type": "DepoTransform"
+   },
+   {
+      "data": {
+         "anode": "AnodePlane:anode4",
+         "fill": 0,
+         "nticks": 6000,
+         "tags": [ ],
+         "tbin": 246,
+         "toffset": 0
+      },
+      "name": "reframer_anode4",
+      "type": "Reframer"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft_anode4",
+         "model": "EmpiricalNoiseModel:noise_model_anode4",
+         "nsamples": 6000,
+         "replacement_percentage": 0.02,
+         "rng": "Random:rng_anode4"
+      },
+      "name": "addnoise_anode4",
+      "type": "AddNoise"
+   },
+   {
+      "data": {
+         "anode": "AnodePlane:anode4",
+         "baselines": [
+            9.9999999999999995e-07,
+            9.9999999999999995e-07,
+            9.9999999999999995e-07
+         ],
+         "fullscale": [
+            0,
+            1.9999999999999999e-06
+         ],
+         "gain": 1,
+         "resolution": 14
+      },
+      "name": "digitizer_anode4",
+      "type": "Digitizer"
+   },
+   {
+      "data": { },
+      "name": "wcphlex_frame_sink",
+      "type": "FrameBoundarySink"
+   },
+   {
+      "data": { },
+      "name": "dft_anode4",
+      "type": "FftwDFT"
+   },
+   {
+      "data": {
+         "seed": 1
+      },
+      "name": "rng_anode4",
+      "type": "Random"
+   },
+   {
+      "data": {
+         "filename": "protodunevd-wires-larsoft-v3.json.bz2"
+      },
+      "name": "wires_anode4",
+      "type": "WireSchemaFile"
+   },
+   {
+      "data": {
+         "filename": "protodunevd_FR_norminal_260324.json.bz2"
+      },
+      "name": "fr_anode4",
+      "type": "FieldResponse"
+   },
+   {
+      "data": {
+         "filename": "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+         "nticks": 6246,
+         "postgain": 1.52,
+         "tick": 500
+      },
+      "name": "elec_anode4",
+      "type": "JsonElecResponse"
+   },
+   {
+      "data": {
+         "faces": [
+            {
+               "anode": 3472.6500000000001,
+               "cathode": 25.400000000000091,
+               "response": 3291.6500000000001
+            },
+            {
+               "anode": 3472.6500000000001,
+               "cathode": 25.400000000000091,
+               "response": 3291.6500000000001
+            }
+         ],
+         "ident": 4,
+         "nimpacts": 10,
+         "wire_schema": "WireSchemaFile:wires_anode4"
+      },
+      "name": "anode4",
+      "type": "AnodePlane"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft_anode4",
+         "field_response": "FieldResponse:fr_anode4",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 6246,
+         "overall_short_padding": 245756.95858791578,
+         "plane": 0,
+         "short_responses": [
+            "JsonElecResponse:elec_anode4"
+         ],
+         "tick": 500
+      },
+      "name": "pir0_anode4",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft_anode4",
+         "field_response": "FieldResponse:fr_anode4",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 6246,
+         "overall_short_padding": 245756.95858791578,
+         "plane": 1,
+         "short_responses": [
+            "JsonElecResponse:elec_anode4"
+         ],
+         "tick": 500
+      },
+      "name": "pir1_anode4",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft_anode4",
+         "field_response": "FieldResponse:fr_anode4",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 6246,
+         "overall_short_padding": 245756.95858791578,
+         "plane": 2,
+         "short_responses": [
+            "JsonElecResponse:elec_anode4"
+         ],
+         "tick": 500
+      },
+      "name": "pir2_anode4",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "data": {
+         "DL": 3.9999999999999998e-07,
+         "DT": 8.8000000000000015e-07,
+         "drift_speed": 0.0014730000000000001,
+         "fluctuate": true,
+         "lifetime": 1000000000,
+         "rng": "Random:rng_anode4",
+         "xregions": [
+            {
+               "anode": 3472.6500000000001,
+               "cathode": 25.400000000000091,
+               "response": 3291.6500000000001
+            },
+            {
+               "anode": 3472.6500000000001,
+               "cathode": 25.400000000000091,
+               "response": 3291.6500000000001
+            }
+         ]
+      },
+      "name": "drifter_anode4",
+      "type": "Drifter"
+   },
+   {
+      "data": {
+         "anode": "AnodePlane:anode4",
+         "chanstat": "",
+         "dft": "FftwDFT:dft_anode4",
+         "nsamples": 6000,
+         "period": 500,
+         "spectra_file": "pdvd-top-noise-spectra-v2.json.bz2",
+         "wire_length_scale": 10
+      },
+      "name": "noise_model_anode4",
+      "type": "EmpiricalNoiseModel"
+   },
+   {
+      "data": {
+         "edges": [
+            {
+               "head": {
+                  "node": "DepoSetDrifter:deposet_drifter_anode4",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoSetBoundarySource:wcphlex_deposet_source",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "DepoTransform:transform_anode4",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoSetDrifter:deposet_drifter_anode4",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "Reframer:reframer_anode4",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoTransform:transform_anode4",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "AddNoise:addnoise_anode4",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "Reframer:reframer_anode4",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "Digitizer:digitizer_anode4",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "AddNoise:addnoise_anode4",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "FrameBoundarySink:wcphlex_frame_sink",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "Digitizer:digitizer_anode4",
+                  "port": 0
+               }
+            }
+         ]
+      },
+      "name": "wcphlex_pgrapher",
+      "type": "Pgrapher"
+   }
+]

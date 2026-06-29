@@ -1,0 +1,258 @@
+[
+   {
+      "data": { },
+      "name": "wcphlex_frame_source",
+      "type": "FrameBoundarySource"
+   },
+   {
+      "data": {
+         "ADC_mV": 11702142857.142859,
+         "anode": "AnodePlane:anode0",
+         "ctoffset": 4000,
+         "dft": "FftwDFT:dft_anode0",
+         "elecresponse": "ColdElecResponse:elec_anode0",
+         "fft_flag": 0,
+         "field_response": "FieldResponse:fr_anode0",
+         "filter_responses": [ ],
+         "ftoffset": 0,
+         "isWrapped": false,
+         "lroi_jump_one_bin": 1,
+         "lroi_rebin": 6,
+         "lroi_th_factor": 3.5,
+         "lroi_th_factor1": 0.69999999999999996,
+         "per_chan_resp": "",
+         "plane2layer": [
+            0,
+            1,
+            2
+         ],
+         "postgain": 1,
+         "r_fake_signal_high_th": 750,
+         "r_fake_signal_high_th_ind_factor": 1,
+         "r_fake_signal_low_th": 375,
+         "r_fake_signal_low_th_ind_factor": 1,
+         "r_low_peak_sep_threshold_pre": 1200,
+         "r_sep_peak": 6,
+         "r_th_factor": 3,
+         "r_th_peak": 3,
+         "sparse": true,
+         "troi_col_th_factor": 5,
+         "troi_ind_th_factor": 3,
+         "use_multi_plane_protection": true,
+         "use_roi_debug_mode": false,
+         "wiener_filter_tight_U": "Wiener_tight_U",
+         "wiener_filter_tight_V": "Wiener_tight_V",
+         "wiener_filter_tight_W": "Wiener_tight_W"
+      },
+      "name": "sigproc_anode0",
+      "type": "OmnibusSigProc"
+   },
+   {
+      "data": { },
+      "name": "wcphlex_frame_sink",
+      "type": "FrameBoundarySink"
+   },
+   {
+      "data": { },
+      "name": "dft_anode0",
+      "type": "FftwDFT"
+   },
+   {
+      "data": {
+         "filename": "protodunevd-wires-larsoft-v3.json.bz2"
+      },
+      "name": "wires_anode0",
+      "type": "WireSchemaFile"
+   },
+   {
+      "data": {
+         "filename": "protodunevd_FR_norminal_260324.json.bz2"
+      },
+      "name": "fr_anode0",
+      "type": "FieldResponse"
+   },
+   {
+      "data": {
+         "gain": 1.2496976598600002e-12,
+         "nticks": 6246,
+         "postgain": 1.1365000000000001,
+         "shaping": 2200,
+         "tick": 500
+      },
+      "name": "elec_anode0",
+      "type": "ColdElecResponse"
+   },
+   {
+      "data": {
+         "faces": [
+            {
+               "anode": -3472.6500000000001,
+               "cathode": -25.400000000000091,
+               "response": -3291.6500000000001
+            },
+            {
+               "anode": -3472.6500000000001,
+               "cathode": -25.400000000000091,
+               "response": -3291.6500000000001
+            }
+         ],
+         "ident": 0,
+         "nimpacts": 10,
+         "wire_schema": "WireSchemaFile:wires_anode0"
+      },
+      "name": "anode0",
+      "type": "AnodePlane"
+   },
+   {
+      "data": {
+         "max_freq": 0.001,
+         "tau": 1.4e-05
+      },
+      "name": "ROI_tight_lf",
+      "type": "LfFilter"
+   },
+   {
+      "data": {
+         "max_freq": 0.001,
+         "tau": 6.0000000000000002e-05
+      },
+      "name": "ROI_tighter_lf",
+      "type": "LfFilter"
+   },
+   {
+      "data": {
+         "max_freq": 0.001,
+         "tau": 1.9999999999999999e-06
+      },
+      "name": "ROI_loose_lf",
+      "type": "LfFilter"
+   },
+   {
+      "data": {
+         "flag": true,
+         "max_freq": 0.001,
+         "power": 2,
+         "sigma": 0
+      },
+      "name": "Gaus_tight",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": true,
+         "max_freq": 0.001,
+         "power": 2,
+         "sigma": 0.00012
+      },
+      "name": "Gaus_wide",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": true,
+         "max_freq": 0.001,
+         "power": 3.7619400000000001,
+         "sigma": 0.00014878800000000001
+      },
+      "name": "Wiener_tight_U",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": true,
+         "max_freq": 0.001,
+         "power": 4.3612500000000001,
+         "sigma": 0.00015965679999999999
+      },
+      "name": "Wiener_tight_V",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": true,
+         "max_freq": 0.001,
+         "power": 3.35324,
+         "sigma": 0.00013622999999999999
+      },
+      "name": "Wiener_tight_W",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": true,
+         "max_freq": 0.001,
+         "power": 5.0542899999999999,
+         "sigma": 0.00018676499999999998
+      },
+      "name": "Wiener_wide_U",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": true,
+         "max_freq": 0.001,
+         "power": 5.7742199999999997,
+         "sigma": 0.00019359999999999999
+      },
+      "name": "Wiener_wide_V",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": true,
+         "max_freq": 0.001,
+         "power": 4.3792799999999996,
+         "sigma": 0.00017572199999999998
+      },
+      "name": "Wiener_wide_W",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": false,
+         "max_freq": 1,
+         "power": 2,
+         "sigma": 2.8209479177387813
+      },
+      "name": "Wire_ind",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "flag": false,
+         "max_freq": 1,
+         "power": 2,
+         "sigma": 5.6418958354775626
+      },
+      "name": "Wire_col",
+      "type": "HfFilter"
+   },
+   {
+      "data": {
+         "edges": [
+            {
+               "head": {
+                  "node": "OmnibusSigProc:sigproc_anode0",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "FrameBoundarySource:wcphlex_frame_source",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "FrameBoundarySink:wcphlex_frame_sink",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "OmnibusSigProc:sigproc_anode0",
+                  "port": 0
+               }
+            }
+         ]
+      },
+      "name": "wcphlex_pgrapher",
+      "type": "Pgrapher"
+   }
+]

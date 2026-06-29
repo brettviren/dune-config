@@ -89,7 +89,55 @@ if(JSONNET_EXECUTABLE)
         "${CMAKE_CURRENT_SOURCE_DIR}/test/pdhd-test.jsonnet"
     )
 
-    message(STATUS "dune-config: graph + detector tests enabled (wirecell share: ${_wct_share})")
+    add_test(NAME dune_config_pdvd
+      COMMAND "${JSONNET_EXECUTABLE}"
+        -J "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+        -J "${_wct_share}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/pdvd-test.jsonnet"
+    )
+
+    # WCT job builders: composition + service-sharing (ddm-4pz.6).
+    add_test(NAME dune_config_job
+      COMMAND "${JSONNET_EXECUTABLE}"
+        -J "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+        -J "${_wct_share}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/job-test.jsonnet"
+    )
+
+    message(STATUS "dune-config: graph + detector + job tests enabled (wirecell share: ${_wct_share})")
+
+    # WCT-config parity regression (ddm-4pz.11): compare each job sub-graph to a
+    # committed golden snapshot, component-by-component (exact), via the
+    # bundled compare_wct_configs.py.  Self-contained: no dependency on
+    # wire-cell-phlex or reference/.  Refresh goldens after intentional changes
+    # (see test/check-golden.sh / test/README.md).  Cross-checks against
+    # wire-cell-phlex + dunereco live in test/compare-references.sh (on demand).
+    find_program(PYTHON3_EXECUTABLE NAMES python3 python)
+    if(PYTHON3_EXECUTABLE)
+      set(_golden_matrix
+        "sim|pdhd|0"  "sigproc|pdhd|0"  "sim-sigproc|pdhd|0"  "splat|pdhd|0"
+        "sim|pdvd|0"  "sigproc|pdvd|0"  "sim-sigproc|pdvd|0"  "splat|pdvd|0"
+        "sim|pdvd|4"  "sigproc|pdvd|4"
+      )
+      foreach(_spec IN LISTS _golden_matrix)
+        string(REPLACE "|" ";" _parts "${_spec}")
+        list(GET _parts 0 _job)
+        list(GET _parts 1 _det)
+        list(GET _parts 2 _ai)
+        add_test(NAME dune_config_parity_${_det}_${_job}_a${_ai}
+          COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test/check-golden.sh"
+            "${JSONNET_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+            "${_wct_share}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/compare_wct_configs.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/golden/${_det}-${_job}-a${_ai}.json"
+            "${_job}" "${_det}" "${_ai}"
+        )
+      endforeach()
+      message(STATUS "dune-config: WCT-config parity (golden) tests enabled")
+    else()
+      message(WARNING "dune-config: python3 not found; parity (golden) tests disabled")
+    endif()
   else()
     message(WARNING "dune-config: wirecell.jsonnet not found on CMAKE_PREFIX_PATH; "
                     "graph composition test disabled")
