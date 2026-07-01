@@ -18,6 +18,7 @@
 // Required WCT plugins: WireCellPgraph, WireCellGen, WireCellSigProc, WireCellAux
 
 local g     = import "../lib/graph.jsonnet";
+local ends  = import "../lib/ends.jsonnet";
 local parts = import "parts.jsonnet";
 
 function(
@@ -32,21 +33,11 @@ function(
 
 local P = parts(detector, anode_index, service_prefix, variant);
 
-local src = g.source({ type: "DepoSetBoundarySource", name: source_name, data: {} });
-local snk = g.sink({   type: "FrameBoundarySink",      name: sink_name,   data: {} });
+// sim = the "sim" composite input end (deposet boundary + drift/sim/digitize)
+// feeding a frame sink.
+local input  = ends.inputs.sim(P, source_name);
+local output = ends.outputs["frame-file"](P, sink_name);
 
-local graph = g.pipeline([
-    src,
-    g.filter(P.setdrifter),
-    g.filter(P.transform),
-    g.filter(P.reframer),
-    g.filter(P.addnoise),
-    g.filter(P.digitizer),
-    snk,
-]);
+local graph = g.pipeline(input.pnodes + output.pnodes);
 
-// Service/helper components referenced by name but not wired as graph nodes.
-local services = [P.dft, P.rng, P.wires, P.fr, P.elec, P.anode]
-                 + P.pirs + [P.drifter_comp, P.noise_model];
-
-g.application(graph, name=app_name, extra=services)
+g.application(graph, name=app_name)

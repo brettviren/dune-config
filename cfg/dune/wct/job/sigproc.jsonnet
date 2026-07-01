@@ -12,6 +12,7 @@
 // Required WCT plugins: WireCellPgraph, WireCellSigProc, WireCellAux
 
 local g     = import "../lib/graph.jsonnet";
+local ends  = import "../lib/ends.jsonnet";
 local parts = import "parts.jsonnet";
 
 function(
@@ -26,13 +27,10 @@ function(
 
 local P = parts(detector, anode_index, service_prefix, variant);
 
-local src = g.source({ type: "FrameBoundarySource", name: source_name, data: {} });
-local snk = g.sink({   type: "FrameBoundarySink",   name: sink_name,   data: {} });
+local input  = ends.inputs["frame-file"](P, source_name);
+local body   = ends.bodies.sigproc(P);
+local output = ends.outputs["frame-file"](P, sink_name);
 
-local graph = g.pipeline([src, g.filter(P.sigproc), snk]);
+local graph = g.pipeline(input.pnodes + body.pnodes + output.pnodes);
 
-// Service components + SP filter instances (looked up by hard-coded C++ name).
-local services = [P.dft, P.wires, P.fr, P.elec, P.anode]
-                 + P.filter_response_comps + P.sp_filters;
-
-g.application(graph, name=app_name, extra=services)
+g.application(graph, name=app_name)

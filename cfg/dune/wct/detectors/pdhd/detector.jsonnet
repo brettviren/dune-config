@@ -257,11 +257,33 @@ local base = schema.make({
 });
 
 // ---------------------------------------------------------------------------
-// Variant selection.  Only "ideal" (the base) exists today; the as-built
-// "real" variant (one pathological APA) is added in beads ddm-4pz.13.
+// Variant selection (beads ddm-4pz.13).
+//
+//   ideal -- the base description (all four APAs nominal).
+//   real  -- the as-built PDHD: APA0 carries an altered/degraded field
+//            response.  Ideal APA0 uses the idealized MCMC best-fit response
+//            (np04hd-garfield-6paths-mcmc-bestfit); the as-built APA0 uses the
+//            plain measured 6-path Garfield response (np04hd-garfield-6paths,
+//            also shipped in wire-cell-data/pdhd).  Only anodes[0].field
+//            changes; the other three APAs and every other APA0 field are
+//            untouched -- the whole point of the overlay mechanism.
+//
+// NOTE (confirm with detector experts): this encodes the pathology purely as a
+// field-response swap.  Whether APA0's SP filter_response correction
+// (protodunehd-field-response-filters, tuned for the best-fit response) and its
+// APA1-variant Wiener names should ALSO change for the as-built response is a
+// physics question left open; the overlay touches only field.filename for now.
 // ---------------------------------------------------------------------------
 local variants = {
     ideal: base,
+    real: variant.patch_anodes(base, {
+        "0": { field: { filename: "np04hd-garfield-6paths.json.bz2" } },
+    }),
 };
 
-variants[variant.select(params)]
+local vname = variant.select(params);
+assert std.objectHas(variants, vname)
+       : "pdhd: unknown variant '" + vname + "' (have: "
+         + std.join(", ", std.objectFields(variants)) + ")";
+
+variants[vname]

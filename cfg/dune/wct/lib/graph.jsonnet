@@ -38,8 +38,10 @@ local wc = import "wirecell.jsonnet";
 
     // -----------------------------------------------------------------------
     // Port-bearing pnode constructors (our names over pg.pnode).
-    //   `uses` lists extra WCT components this node references but which are not
-    //   themselves graph nodes (e.g. an AnodePlane referenced by a Drifter).
+    //   `uses` lists the SERVICE components this node depends on but which are
+    //   not themselves graph nodes (e.g. an AnodePlane referenced by a Drifter).
+    //   Usually the inode itself already carries `.uses` (see job/parts.jsonnet),
+    //   so this argument can be left empty; pg.uses() collects + orders both.
     // -----------------------------------------------------------------------
 
     // A source: no input, one output.
@@ -63,18 +65,23 @@ local wc = import "wirecell.jsonnet";
 
     // -----------------------------------------------------------------------
     // Finalize a closed pnode graph into the WCT config sequence consumed by
-    // the wire-cell-phlex executor: every (de-duplicated) component followed by
-    // a Pgrapher whose edges are the graph's edges.
+    // the wire-cell-phlex executor: every component (wired nodes AND the
+    // services they reach via `.uses`) followed by a Pgrapher whose edges are
+    // the graph's edges.
     //
     //   graph : a CLOSED pnode (built via pipeline/fan/intern)
     //   name  : Pgrapher instance name (the executor injects app_name as a TLA)
     //   type  : graph-executor type ("Pgrapher" or "TbbFlow")
-    //   extra : additional WCT components to register but NOT wire into the
-    //           graph -- e.g. OmnibusSigProc's LfFilter/HfFilter instances,
-    //           which C++ looks up by hard-coded name rather than by edge.
+    //
+    // pg.uses() walks every node's `.uses` and TOPOLOGICALLY SORTS the result,
+    // so a service is always emitted -- and configured -- before any client
+    // that uses it (WCT configures in array order; OmnibusSigProc walks its
+    // AnodePlane at configure() time, so the anode must come first; see
+    // [[wct-config-order-sigproc]]).  As long as each inode declares its `.uses`
+    // (see job/parts.jsonnet), no manual service list is needed.
     // -----------------------------------------------------------------------
-    application(graph, name="wcphlex_pgrapher", type="Pgrapher", extra=[])::
-        pg.uses(graph) + extra + [{
+    application(graph, name="wcphlex_pgrapher", type="Pgrapher")::
+        pg.uses(graph) + [{
             type: type,
             name: name,
             data: { edges: pg.edges(graph) },

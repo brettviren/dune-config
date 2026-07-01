@@ -7,18 +7,22 @@
 
 local g = import "dune/wct/lib/graph.jsonnet";
 
-// Synthetic inodes (real component types; data irrelevant to the test).
+// A non-wired service inode, and a deeper service it depends on (via .uses).
+local dft  = { type: "FftwDFT",   name: "dft",  data: {} };
+local wires = { type: "WireSchemaFile", name: "wires", data: {} };
+local anode = { type: "AnodePlane", name: "a", data: {}, uses: [wires] };
+
+// Wired stage inodes declare their service deps via `.uses`.
 local src = g.source({ type: "DepoSetBoundarySource", name: "src", data: {} });
-local mid = g.filter({ type: "DepoSetDrifter",        name: "mid", data: {} });
+local mid = g.filter({ type: "DepoTransform", name: "mid", data: {}, uses: [anode, dft] });
 local snk = g.sink({   type: "FrameBoundarySink",      name: "snk", data: {} });
 
-// --- linear composition + finalize -----------------------------------------
 local graph = g.pipeline([src, mid, snk], name="demo");
-local extra = [{ type: "LfFilter", name: "flt", data: {} }];   // registered, not wired
-local cfg   = g.application(graph, name="app", extra=extra);
+local cfg   = g.application(graph, name="app");
 
-// components: src, mid, snk (3) + extra (1) + Pgrapher (1) = 5
-assert std.length(cfg) == 5 : "expected 5 config entries, got " + std.length(cfg);
+// components: src, mid, snk (wired) + anode, wires, dft (services via uses) + Pgrapher
+local types = [c.type for c in cfg];
+assert std.length(cfg) == 7 : "expected 7 config entries, got " + std.length(cfg);
 
 local appnode = cfg[std.length(cfg) - 1];
 assert appnode.type == "Pgrapher" && appnode.name == "app"
@@ -26,16 +30,24 @@ assert appnode.type == "Pgrapher" && appnode.name == "app"
 assert std.length(appnode.data.edges) == 2
        : "pipeline of 3 must yield 2 edges, got " + std.length(appnode.data.edges);
 
-// the un-wired extra component is present
-assert std.length([c for c in cfg if c.type == "LfFilter"]) == 1
-       : "extra component must be registered exactly once";
+// every service reached via .uses is present exactly once
+assert std.length([c for c in cfg if c.type == "AnodePlane"]) == 1 : "anode present once";
+assert std.length([c for c in cfg if c.type == "WireSchemaFile"]) == 1 : "wires present once";
+
+// `.uses` is stripped from the emitted components (WCT never sees it)
+assert std.all([!std.objectHas(c, "uses") for c in cfg]) : "uses must be pruned from output";
+
+// TOPOLOGICAL ORDER: a service is emitted before any client that uses it.
+local idx(t) = [i for i in std.range(0, std.length(cfg) - 1) if cfg[i].type == t][0];
+assert idx("WireSchemaFile") < idx("AnodePlane") : "wires before anode (anode uses wires)";
+assert idx("AnodePlane") < idx("DepoTransform") : "anode before its client (mid uses anode)";
 
 // --- service sharing: one shared inode referenced by two stages ------------
-local svc = { type: "FftwDFT", name: "dft", data: {} };
-local a   = g.filter({ type: "Reframer",      name: "a", data: {} }, uses=[svc]);
-local b   = g.filter({ type: "OmnibusSigProc", name: "b", data: {} }, uses=[svc]);
-local shared_cfg = g.application(g.pipeline([src, a, b, snk]));
-local nsvc = std.length([c for c in shared_cfg if c.type == "FftwDFT"]);
-assert nsvc == 1 : "shared service must be de-duplicated to one instance, got " + nsvc;
+local shared = { type: "FftwDFT", name: "shared_dft", data: {} };
+local a2 = g.filter({ type: "Reframer",       name: "a2", data: {}, uses: [shared] });
+local b2 = g.filter({ type: "OmnibusSigProc", name: "b2", data: {}, uses: [shared] });
+local shared_cfg = g.application(g.pipeline([src, a2, b2, snk]));
+assert std.length([c for c in shared_cfg if c.name == "shared_dft"]) == 1
+       : "shared service must be de-duplicated to one instance";
 
 { ok: true }

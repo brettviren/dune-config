@@ -8,20 +8,22 @@
 # and the golden file in this repo — NOT on wire-cell-phlex or reference/.
 #
 # Usage:
-#   check-golden.sh JSONNET CFG_DIR WCT_SHARE COMPARE_PY GOLDEN JOB DET ANODE
+#   check-golden.sh JSONNET CFG_DIR WCT_SHARE COMPARE_PY GOLDEN JOB DET ANODE [VARIANT]
+#
+# VARIANT defaults to "ideal".
 #
 # Regenerate goldens (after an intentional config change), e.g.:
 #   jsonnet -J cfg -J <share/wirecell> --tla-str detector=pdhd --tla-str anode_index=0 \
 #       cfg/dune/wct/job/sim.jsonnet > test/golden/pdhd-sim-a0.json
 set -euo pipefail
 
-JSONNET=$1; CFG=$2; WCT_SHARE=$3; COMPARE=$4; GOLDEN=$5; JOB=$6; DET=$7; AI=$8
+JSONNET=$1; CFG=$2; WCT_SHARE=$3; COMPARE=$4; GOLDEN=$5; JOB=$6; DET=$7; AI=$8; VARIANT=${9:-ideal}
 
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
 
 "$JSONNET" -J "$CFG" -J "$WCT_SHARE" \
-    --tla-str detector="$DET" --tla-str anode_index="$AI" \
+    --tla-str detector="$DET" --tla-str anode_index="$AI" --tla-str variant="$VARIANT" \
     "$CFG/dune/wct/job/$JOB.jsonnet" > "$tmp"
 
 # Exact regression match: no float tolerance, no skips.

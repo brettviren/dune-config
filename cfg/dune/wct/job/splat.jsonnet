@@ -12,6 +12,7 @@
 // Required WCT plugins: WireCellPgraph, WireCellGen, WireCellAux
 
 local g     = import "../lib/graph.jsonnet";
+local ends  = import "../lib/ends.jsonnet";
 local parts = import "parts.jsonnet";
 
 function(
@@ -26,18 +27,10 @@ function(
 
 local P = parts(detector, anode_index, service_prefix, variant);
 
-local src = g.source({ type: "DepoSetBoundarySource", name: source_name, data: {} });
-local snk = g.sink({   type: "FrameBoundarySink",      name: sink_name,   data: {} });
+local input  = ends.inputs["deposet-file"](P, source_name);
+local body   = ends.bodies.splat(P);
+local output = ends.outputs["frame-file"](P, sink_name);
 
-local graph = g.pipeline([
-    src,
-    g.filter(P.setdrifter),
-    g.filter(P.splat),
-    g.filter(P.reframer),
-    snk,
-]);
+local graph = g.pipeline(input.pnodes + body.pnodes + output.pnodes);
 
-// DepoFluxSplat needs no elec/pirs/noise.
-local services = [P.dft, P.rng, P.wires, P.fr, P.anode, P.drifter_comp];
-
-g.application(graph, name=app_name, extra=services)
+g.application(graph, name=app_name)

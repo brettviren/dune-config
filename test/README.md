@@ -11,7 +11,11 @@ the WCT jsonnet share dir on the path; CMake discovers it from
 | `dune_config_schema_variant` | `schema-variant-test.jsonnet` | schema defaults/validate + variant overlays |
 | `dune_config_graph` | `graph-test.jsonnet` | pnode composition + service de-dup |
 | `dune_config_pdhd` / `_pdvd` | `pdhd-test.jsonnet` / `pdvd-test.jsonnet` | detector ports |
+| `dune_config_pdhd_variant` | `pdhd-variant-test.jsonnet` | PDHD ideal-vs-real overlay (only APA0 field differs) |
 | `dune_config_job` | `job-test.jsonnet` | job builder chains + de-dup |
+| `dune_config_ends` | `ends-test.jsonnet` | I/O ends registry + SP-input swap (WCT level) |
+| `dune_config_phlex` | `phlex-test.jsonnet` | phlex workflow builder (cfg-only) |
+| `dune_config_sp_swap` | `sp-swap-test.jsonnet` | SP-input swap sim/frame/daq (cfg-only) |
 | `dune_config_parity_<det>_<job>_a<ai>` | golden + `check-golden.sh` | **WCT-config parity regression** |
 
 ## WCT-config parity (beads ddm-4pz.11)
@@ -54,6 +58,25 @@ done
 
 ```bash
 test/compare-references.sh [WCT_SHARE]
+```
+
+## Live phlex(ed) integration run (ddm-4pz.12)
+
+`test/integration-run.sh` drives `dune/phlex/sp-job.jsonnet` with `phlexed`
+(CLI TLAs + jpath) against the built runtime + `reference/wire-cell-data`.
+On-demand (needs the full runtime; reads `reference/`), not a default ctest.
+
+- **Stage A (sim path)** — deposets → drift/sim/digitize → frames NPZ. Asserted
+  (~21 MB digits NPZ); exercises the whole phlex+WCT+detector stack + data.
+- **Stage B (full sim-sigproc + equivalence)** — runs combined sim-sigproc AND
+  split sim→sigproc and asserts they are identical (same fixed RNG seed → same
+  signals). Validates OmnibusSigProc end-to-end and the composition at runtime.
+
+> Run the Python comparison with a CLEAN `LD_LIBRARY_PATH` — the Spack view's
+> BLAS (needed by phlexed) shadows system numpy's and breaks it otherwise.
+
+```bash
+test/integration-run.sh [VIEW] [DEPOS_NPZ]
 ```
 
 ## The comparison tool

@@ -15,6 +15,7 @@
 // Required WCT plugins: WireCellPgraph, WireCellGen, WireCellSigProc, WireCellAux
 
 local g     = import "../lib/graph.jsonnet";
+local ends  = import "../lib/ends.jsonnet";
 local parts = import "parts.jsonnet";
 
 function(
@@ -29,23 +30,13 @@ function(
 
 local P = parts(detector, anode_index, service_prefix, variant);
 
-local src = g.source({ type: "DepoSetBoundarySource", name: source_name, data: {} });
-local snk = g.sink({   type: "FrameBoundarySink",      name: sink_name,   data: {} });
+// The "sim" input end (deposets -> frames) feeding the sigproc body: swapping
+// ends.inputs.sim for ends.inputs["frame-file"]/["daq-hdf"] yields the plain
+// sigproc job -- that is the SP-input swap (ddm-4pz.10).
+local input  = ends.inputs.sim(P, source_name);
+local body   = ends.bodies.sigproc(P);
+local output = ends.outputs["frame-file"](P, sink_name);
 
-local graph = g.pipeline([
-    src,
-    g.filter(P.setdrifter),
-    g.filter(P.transform),
-    g.filter(P.reframer),
-    g.filter(P.addnoise),
-    g.filter(P.digitizer),
-    g.filter(P.sigproc),
-    snk,
-]);
+local graph = g.pipeline(input.pnodes + body.pnodes + output.pnodes);
 
-// Union of sim + sigproc service/helper components (de-duplicated by pg.uses()).
-local services = [P.dft, P.rng, P.wires, P.fr, P.elec, P.anode]
-                 + P.pirs + [P.drifter_comp, P.noise_model]
-                 + P.filter_response_comps + P.sp_filters;
-
-g.application(graph, name=app_name, extra=services)
+g.application(graph, name=app_name)

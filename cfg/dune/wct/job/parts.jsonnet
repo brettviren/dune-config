@@ -3,18 +3,24 @@
 // Single source of every WCT component (inode) used by the DUNE sim/sigproc/
 // splat job builders.  Centralizing the {type,name,data} definitions here is
 // what lets the job builders (sim/sigproc/sim-sigproc/splat) COMPOSE pnodes
-// instead of each re-declaring the same components -- the duplication that had
-// already let the old hand-written sim.jsonnet and sim-sigproc.jsonnet drift
-// apart (different DepoTransform rng / PIR padding).
+// instead of each re-declaring the same components.
 //
-//   parts(detector, anode_index, service_prefix, variant) -> { inodes... }
+//   parts(detector, anode_index, service_prefix, variant) -> { stage inodes... }
 //
-// Service/helper inodes (dft, rng, wires, fr, elec, anode, pirs, drifter,
-// noise_model, ...) are built ONCE here.  Each job builder references the same
-// objects, so graph.application()/pg.uses() de-duplicates them to exactly one
-// instance even in the combined sim+sigproc graph.
+// DEPENDENCY DECLARATION via `.uses`:
+//   Every inode that references another component (by wc.tn in its data, or by
+//   hard-coded name like OmnibusSigProc's SP filters) carries a `.uses` list of
+//   those components.  A service component likewise carries its own `.uses`
+//   (e.g. AnodePlane uses the WireSchemaFile).  pgraph's uses()/resolve_uses()
+//   then TOPOLOGICALLY SORTS the whole dependency graph, so a service is always
+//   emitted -- and therefore configured -- before any client that uses it.
+//   This is what guarantees, e.g., AnodePlane is configured before OmnibusSigProc
+//   (which walks the anode in its configure()); see [[wct-config-order-sigproc]].
+//   pgraph strips `.uses` before the component reaches the WCT config sequence.
 //
-// Returns hidden (::) fields; job builders read them as P.<name>.
+//   Consequence: the job builders only need to wire the STAGE inodes into a
+//   pipeline; the services they (transitively) use are pulled in and ordered
+//   automatically by pg.uses().  No manual service list is needed.
 
 local wc   = import "wirecell.jsonnet";
 local dets = import "dune/wct/detectors.jsonnet";
@@ -34,7 +40,7 @@ local nticks_ductor   = nticks_daq + response_nticks;
 local readout_time    = nticks_ductor * tick;
 local start_time      = det.sim.tick0_time - det.response_plane / det.lar.drift_speed;
 
-// --- shared service inodes --------------------------------------------------
+// --- leaf service inodes (no dependencies) ----------------------------------
 local dft = {
     type: "FftwDFT",
     name: pfx + "dft_" + a.name,
@@ -78,6 +84,7 @@ local elec = {
     ),
 };
 
+// --- service inodes with dependencies ---------------------------------------
 local anode = {
     type: "AnodePlane",
     name: pfx + a.name,
@@ -87,6 +94,7 @@ local anode = {
         wire_schema: wc.tn(wires),
         faces:       a.faces,
     },
+    uses: [wires],
 };
 
 // PIR short padding must exceed the full field-response duration; 2x the drift
@@ -107,10 +115,10 @@ local pir(plane) = {
         long_responses:        [],
         long_padding:          1.5 * wc.ms,
     },
+    uses: [dft, fr, elec],
 };
 local pirs = [pir(p) for p in [0, 1, 2]];
 
-// --- sim-stage inodes -------------------------------------------------------
 local drifter_comp = {
     type: "Drifter",
     name: pfx + "drifter_" + a.name,
@@ -123,12 +131,47 @@ local drifter_comp = {
         fluctuate:   det.sim.fluctuate,
         xregions:    a.faces,
     },
+    uses: [rng],
 };
 
+local noise_model = {
+    type: "EmpiricalNoiseModel",
+    name: pfx + "noise_model_" + a.name,
+    data: {
+        anode:             wc.tn(anode),
+        dft:               wc.tn(dft),
+        chanstat:          "",
+        spectra_file:      a.noise.filename,
+        nsamples:          nticks_daq,
+        period:            tick,
+        wire_length_scale: a.noise.wire_length_scale,
+    },
+    uses: [anode, dft],
+};
+
+local has_filter_response = a.filter_response != null;
+local filter_response_comps = if has_filter_response then [
+    {
+        type: "FilterResponse",
+        name: pfx + "fltresp_" + a.name + "_" + plane,
+        data: {
+            filename: a.filter_response.filename,
+            plane:    plane,
+            wires:    wc.tn(wires),
+        },
+        uses: [wires],
+    }
+    for plane in [0, 1, 2]
+] else [];
+local filter_response_tns =
+    [wc.tn(filter_response_comps[p]) for p in std.range(0, std.length(filter_response_comps) - 1)];
+
+// --- stage inodes (wired into the graph; carry their service deps via .uses) -
 local setdrifter = {
     type: "DepoSetDrifter",
     name: pfx + "deposet_drifter_" + a.name,
     data: { drifter: wc.tn(drifter_comp) },
+    uses: [drifter_comp],
 };
 
 local transform = {
@@ -147,6 +190,7 @@ local transform = {
         nsigma:             det.sim.nsigma,
         first_frame_number: 0,
     },
+    uses: [rng, anode, dft] + pirs,
 };
 
 local reframer = {
@@ -160,20 +204,7 @@ local reframer = {
         toffset: 0,
         nticks:  nticks_daq,
     },
-};
-
-local noise_model = {
-    type: "EmpiricalNoiseModel",
-    name: pfx + "noise_model_" + a.name,
-    data: {
-        anode:             wc.tn(anode),
-        dft:               wc.tn(dft),
-        chanstat:          "",
-        spectra_file:      a.noise.filename,
-        nsamples:          nticks_daq,
-        period:            tick,
-        wire_length_scale: a.noise.wire_length_scale,
-    },
+    uses: [anode],
 };
 
 local addnoise = {
@@ -186,6 +217,7 @@ local addnoise = {
         nsamples:               nticks_daq,
         replacement_percentage: 0.02,
     },
+    uses: [rng, dft, noise_model],
 };
 
 local digitizer = {
@@ -198,9 +230,9 @@ local digitizer = {
         fullscale:  a.adc.fullscale,
         baselines:  a.adc.baselines,
     },
+    uses: [anode],
 };
 
-// --- splat-stage inode ------------------------------------------------------
 local splat = {
     type: "DepoFluxSplat",
     name: pfx + "splat_" + a.name,
@@ -208,27 +240,11 @@ local splat = {
         anode:          wc.tn(anode),
         field_response: wc.tn(fr),   // only period and origin are used
     },
+    uses: [anode, fr],
 };
 
-// --- sigproc-stage inodes ---------------------------------------------------
 local adc_range = a.adc.fullscale[1] - a.adc.fullscale[0];
 local adc_mv    = ((1 << a.adc.resolution) - 1.0) / adc_range;
-
-local has_filter_response = a.filter_response != null;
-local filter_response_comps = if has_filter_response then [
-    {
-        type: "FilterResponse",
-        name: pfx + "fltresp_" + a.name + "_" + plane,
-        data: {
-            filename: a.filter_response.filename,
-            plane:    plane,
-            wires:    wc.tn(wires),
-        },
-    }
-    for plane in [0, 1, 2]
-] else [];
-local filter_response_tns =
-    [wc.tn(filter_response_comps[p]) for p in std.range(0, std.length(filter_response_comps) - 1)];
 
 local sp = a.sigproc;
 local sigproc = {
@@ -269,9 +285,15 @@ local sigproc = {
         wiener_filter_tight_W: sp.wiener_filters[2],
         plane2layer: sp.plane2layer,
     },
+    // anode/dft/fr/elec by wc.tn; filter_responses by tn; SP filters (LfFilter/
+    // HfFilter) by hard-coded name -> all must be present + ordered, so list them.
+    uses: [anode, dft, fr, elec] + filter_response_comps + det.sp_filters,
 };
 
 // ---------------------------------------------------------------------------
+// Expose the STAGE inodes the job builders wire into pipelines.  Each carries
+// its service dependencies via `.uses`, so pg.uses() pulls in + orders every
+// referenced service automatically -- no separate service list to thread.
 {
     det:: det,
     a:: a,
@@ -281,20 +303,6 @@ local sigproc = {
         nticks_ductor: nticks_ductor, readout_time: readout_time, start_time: start_time,
     },
 
-    // service / helper inodes (non-wired: referenced by name)
-    dft:: dft,
-    rng:: rng,
-    wires:: wires,
-    fr:: fr,
-    elec:: elec,
-    anode:: anode,
-    pirs:: pirs,
-    drifter_comp:: drifter_comp,
-    noise_model:: noise_model,
-    filter_response_comps:: filter_response_comps,
-    sp_filters:: det.sp_filters,
-
-    // stage inodes (wired into the graph by the job builders)
     setdrifter:: setdrifter,
     transform:: transform,
     reframer:: reframer,

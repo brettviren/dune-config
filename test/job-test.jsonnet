@@ -60,6 +60,16 @@ assert count(cfg_ss, "FieldResponse") == 1 : "shared FieldResponse de-duplicated
 assert count(cfg_ss, "Digitizer") == 1 && count(cfg_ss, "OmnibusSigProc") == 1
        : "sim-sigproc has both Digitizer and OmnibusSigProc";
 
+// --- configuration ORDER: services before their consumers ------------------
+// WCT configures components in array order; OmnibusSigProc walks the AnodePlane
+// in its own configure() to size arrays, so the anode MUST appear first.  This
+// is invisible to the (order-independent) parity goldens, so guard it here.
+local idx(cfg, t) = [i for i in std.range(0, std.length(cfg) - 1) if cfg[i].type == t][0];
+assert idx(cfg_sigp, "AnodePlane") < idx(cfg_sigp, "OmnibusSigProc")
+       : "sigproc: AnodePlane must be emitted before OmnibusSigProc";
+assert idx(cfg_ss, "AnodePlane") < idx(cfg_ss, "OmnibusSigProc")
+       : "sim-sigproc: AnodePlane must be emitted before OmnibusSigProc";
+
 // --- splat: truth reference, no elec/digitize/sigproc ----------------------
 assert count(cfg_splat, "DepoFluxSplat") == 1 : "splat has DepoFluxSplat";
 assert count(cfg_splat, "Digitizer") == 0 : "splat has no Digitizer";

@@ -62,6 +62,20 @@ if(JSONNET_EXECUTABLE)
       "${CMAKE_CURRENT_SOURCE_DIR}/test/schema-variant-test.jsonnet"
   )
 
+  # phlex workflow builder (ddm-4pz.9): pure data, also self-contained.
+  add_test(NAME dune_config_phlex
+    COMMAND "${JSONNET_EXECUTABLE}"
+      -J "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+      "${CMAKE_CURRENT_SOURCE_DIR}/test/phlex-test.jsonnet"
+  )
+
+  # SP-input swap sim/frame-file/daq-hdf (ddm-4pz.10): pure data, self-contained.
+  add_test(NAME dune_config_sp_swap
+    COMMAND "${JSONNET_EXECUTABLE}"
+      -J "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+      "${CMAKE_CURRENT_SOURCE_DIR}/test/sp-swap-test.jsonnet"
+  )
+
   # The graph-composition test (ddm-4pz.2) imports graph.jsonnet, which pulls in
   # WCT's pgraph.jsonnet + wirecell.jsonnet from <prefix>/share/wirecell.  Locate
   # that dir on CMAKE_PREFIX_PATH (the Spack view, in the devel/ superbuild).
@@ -96,12 +110,28 @@ if(JSONNET_EXECUTABLE)
         "${CMAKE_CURRENT_SOURCE_DIR}/test/pdvd-test.jsonnet"
     )
 
+    # PDHD ideal-vs-real variant overlay (ddm-4pz.13).
+    add_test(NAME dune_config_pdhd_variant
+      COMMAND "${JSONNET_EXECUTABLE}"
+        -J "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+        -J "${_wct_share}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/pdhd-variant-test.jsonnet"
+    )
+
     # WCT job builders: composition + service-sharing (ddm-4pz.6).
     add_test(NAME dune_config_job
       COMMAND "${JSONNET_EXECUTABLE}"
         -J "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
         -J "${_wct_share}"
         "${CMAKE_CURRENT_SOURCE_DIR}/test/job-test.jsonnet"
+    )
+
+    # I/O ends registries + SP-input swap (ddm-4pz.8).
+    add_test(NAME dune_config_ends
+      COMMAND "${JSONNET_EXECUTABLE}"
+        -J "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+        -J "${_wct_share}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/ends-test.jsonnet"
     )
 
     message(STATUS "dune-config: graph + detector + job tests enabled (wirecell share: ${_wct_share})")
@@ -134,6 +164,21 @@ if(JSONNET_EXECUTABLE)
             "${_job}" "${_det}" "${_ai}"
         )
       endforeach()
+
+      # Real-variant parity goldens (ddm-4pz.13): PDHD APA0 with the as-built
+      # field response.  Pass variant=real (9th arg to check-golden.sh).
+      foreach(_job IN ITEMS sim-sigproc sigproc)
+        add_test(NAME dune_config_parity_pdhd_${_job}_a0_real
+          COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test/check-golden.sh"
+            "${JSONNET_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+            "${_wct_share}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/compare_wct_configs.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/test/golden/pdhd-${_job}-a0-real.json"
+            "${_job}" "pdhd" "0" "real"
+        )
+      endforeach()
+
       message(STATUS "dune-config: WCT-config parity (golden) tests enabled")
     else()
       message(WARNING "dune-config: python3 not found; parity (golden) tests disabled")
