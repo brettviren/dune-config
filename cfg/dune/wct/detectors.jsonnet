@@ -18,5 +18,6 @@
 
 {
     pdhd: import "detectors/pdhd/detector.jsonnet",
+    pdsp: import "detectors/pdsp/detector.jsonnet",
     pdvd: import "detectors/pdvd/detector.jsonnet",
 }
