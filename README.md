@@ -29,12 +29,29 @@ cfg/dune/                 import namespace root ("dune/...")
     job/                  WCT subgraph builders (pnodes) + I/O-ends registries
   phlex/
     job/                  phlex workflow builders
+scripts/                  named commands for "popular" workflows (see below)
+  cfg/                    baked Jsonnet configs the scripts fill via TLAs
 test/
   smoke-workflow.jsonnet  ctest smoke (namespaced import resolves)
 ```
 
 Each currently-empty directory has a `README.md` naming the beads task that
 fills it.
+
+## Scripts
+
+`scripts/` gives a **name** to an emerging set of common DUNE workflows so they
+can be referred to, discovered, and run without re-deriving a command line.  A
+script is typically a thin wrapper that runs **`phlexed`** on a baked-in Jsonnet
+config (under `scripts/cfg/`) adjusted by options; some are fuller shell or
+Snakemake workflows.  A detector-specific job takes the detector as an option
+(guessed from the input when possible).
+
+- [`daq-to-frame-file`](scripts/daq-to-frame-file) — read a DUNE DAQ HDF5 file
+  and write a WCT frame file (`.npz`/`.tar`/`.tar.gz`/`.zip`) via the
+  `dune-daq-phlex` source + WCT's `FrameFileSink`.
+
+See [`scripts/README.md`](scripts/README.md) for conventions and the full list.
 
 ## Settled design decisions (2026-06-29)
 

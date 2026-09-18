@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+#
+# daq-to-frame-file -- read a DUNE DAQ HDF5 file and write a Wire-Cell Toolkit
+# frame file, using Phlex + the dune-daq-phlex source and WCT's FrameFileSink.
+#
+# One of the named "popular workflows" of dune-config (see scripts/README.md).
+# It bakes in scripts/cfg/daq-to-frame-file.jsonnet and just fills its top-level
+# args from the command line.  Run under an activated build environment (phlexed
+# on PATH, the Phlex plugins loadable).
+#
+# Usage:
+#   daq-to-frame-file [options] <in.hdf5>
+#
+#   <in.hdf5>                 a DUNE DAQ HDF5 file (positional, required)
+#
+# Options:
+#   -o, --output <outfile>    output frame file.  The extension selects the WCT
+#                             container format: .npz (default), .tar, .tar.gz,
+#                             .tgz, .zip.  Default: the input base name with the
+#                             extension replaced by .npz, in the current dir.
+#   -d, --detector <name>     detector: pdhd | pdvd.  If omitted, guessed from
+#                             the input base name (np04hd* -> pdhd, np02vd* ->
+#                             pdvd).  Selects the default channel map.
+#       --channel-map <path>  explicit DUNE ChannelMap*.txt, overriding the
+#                             per-detector default.
+#       --tick <seconds>      ADC sample period (default 0.5e-6 = 2 MHz).  Not in
+#                             the DAQ payload; detector configuration.
+#       --record <n>          process only the n-th trigger record (0-based).
+#                             Shorthand for --first-record <n> --max-records 1.
+#       --first-record <n>    0-based index of the first record to process.
+#       --max-records <m>     process at most <m> records from the first.
+#                             Default: all records (whole file).
+#   -j, --parallel <n>        Phlex parallelism (passed through to phlexed).
+#   -n, --dry-run             print the resolved phlexed command; do not run.
+#   -h, --help                this help.
+#
+# Environment:
+#   DUNE_DAQ_CHANNELMAPS      directory holding <det>/ChannelMap*.txt trees.
+#                             Default: <prefix>/share/dune_daq_codec/channelmaps,
+#                             where <prefix> is derived from `phlexed`'s location.
+#   WIRECELL_PATH             the wrapper prepends <prefix>/share/wire-cell-phlex
+#                             /cfg so FrameFileSink's frame-file-sink.jsonnet
+#                             resolves via WCT's loader.
+
+set -euo pipefail
+
+progname=$(basename "$0")
+scriptdir=$(cd -- "$(dirname -- "$(readlink -f -- "$0")")" && pwd)
+config="$scriptdir/cfg/daq-to-frame-file.jsonnet"
+
+# --- Pinned per-detector default channel maps (override with --channel-map). ---
+# Maintenance point: bump these as the vendored maps advance or a run demands a
+# specific version.  Paths are relative to the channelmaps directory.
+declare -A default_map=(
+    [pdhd]="pd2hd/PD2HDChannelMap_v6.txt"
+    [pdvd]="pd2vd/PD2VDTPCChannelMap_v2.txt"
+)
+
+die()  { printf '%s: error: %s\n' "$progname" "$*" >&2; exit 1; }
+usage() { awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "$0"; }
+
+# --- Parse arguments. ---
+in_file=""
+out_file=""
+detector=""
+channel_map=""
+tick=""
+first_record=""
+max_records=""
+parallel=""
+dry_run=0
+
+is_uint() { case "$1" in ''|*[!0-9]*) return 1 ;; *) return 0 ;; esac; }
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -o|--output)       out_file=${2:?"--output needs a value"}; shift 2 ;;
+        -d|--detector)     detector=${2:?"--detector needs a value"}; shift 2 ;;
+        --channel-map)     channel_map=${2:?"--channel-map needs a value"}; shift 2 ;;
+        --tick)            tick=${2:?"--tick needs a value"}; shift 2 ;;
+        --record)          first_record=${2:?"--record needs a value"}; max_records=${max_records:-1}; shift 2 ;;
+        --first-record)    first_record=${2:?"--first-record needs a value"}; shift 2 ;;
+        --max-records)     max_records=${2:?"--max-records needs a value"}; shift 2 ;;
+        -j|--parallel)     parallel=${2:?"--parallel needs a value"}; shift 2 ;;
+        -n|--dry-run)      dry_run=1; shift ;;
+        -h|--help)         usage; exit 0 ;;
+        --)                shift; break ;;
+        -*)                die "unknown option '$1' (try --help)" ;;
+        *)
+            [ -z "$in_file" ] || die "unexpected extra argument '$1'"
+            in_file=$1; shift ;;
+    esac
+done
+[ $# -eq 0 ] || { [ -z "$in_file" ] && in_file=$1 || die "unexpected extra argument '$1'"; }
+
+[ -n "$in_file" ] || { usage >&2; die "missing input DUNE DAQ HDF5 file"; }
+[ -r "$in_file" ] || die "cannot read input file '$in_file'"
+
+base=$(basename -- "$in_file")
+
+# --- Guess the detector from the input name if not given. ---
+if [ -z "$detector" ]; then
+    case "$base" in
+        np04hd*|NP04HD*) detector=pdhd ;;
+        np02vd*|NP02VD*) detector=pdvd ;;
+        *) die "cannot guess detector from '$base'; pass -d/--detector (pdhd|pdvd)" ;;
+    esac
+fi
+detector=$(printf '%s' "$detector" | tr '[:upper:]' '[:lower:]')
+case "$detector" in pdhd|pdvd) ;; *) die "unknown detector '$detector' (expected pdhd|pdvd)" ;; esac
+
+# --- Validate the optional record slice. ---
+if [ -n "$first_record" ]; then is_uint "$first_record" || die "--record/--first-record must be a non-negative integer, got '$first_record'"; fi
+if [ -n "$max_records" ];  then is_uint "$max_records"  || die "--max-records must be a non-negative integer, got '$max_records'"; fi
+
+# --- Default output: input base name with the extension replaced by .npz. ---
+if [ -z "$out_file" ]; then
+    out_file="${base%.*}.npz"
+fi
+
+# --- Resolve the install prefix from phlexed (for channel maps + WCT cfg). ---
+phlexed_bin=$(command -v phlexed) || die "phlexed not found on PATH (activate the build environment)"
+prefix=$(cd -- "$(dirname -- "$(readlink -f -- "$phlexed_bin")")/.." && pwd)
+
+# --- Resolve the channel map. ---
+if [ -z "$channel_map" ]; then
+    mapdir=${DUNE_DAQ_CHANNELMAPS:-$prefix/share/dune_daq_codec/channelmaps}
+    channel_map="$mapdir/${default_map[$detector]}"
+    [ -r "$channel_map" ] || die "default channel map for $detector not found: '$channel_map' (set DUNE_DAQ_CHANNELMAPS or pass --channel-map)"
+else
+    [ -r "$channel_map" ] || die "cannot read channel map '$channel_map'"
+fi
+
+[ -r "$config" ] || die "baked workflow config not found: '$config'"
+
+# --- Ensure FrameFileSink's WCT sub-graph resolves on WIRECELL_PATH. ---
+wct_cfg="$prefix/share/wire-cell-phlex/cfg"
+if [ -d "$wct_cfg" ]; then
+    export WIRECELL_PATH="$wct_cfg${WIRECELL_PATH:+:$WIRECELL_PATH}"
+fi
+
+# --- Assemble the phlexed command. ---
+cmd=(phlexed -c "$config"
+     -A "in_file=$in_file"
+     -A "channel_map=$channel_map"
+     -A "out_file=$out_file")
+[ -n "$tick" ]         && cmd+=(--tla-code "tick=$tick")
+[ -n "$first_record" ] && cmd+=(--tla-code "first_record=$first_record")
+[ -n "$max_records" ]  && cmd+=(--tla-code "max_records=$max_records")
+[ -n "$parallel" ]     && cmd+=(-j "$parallel")
+
+printf '%s: %s (%s) -> %s\n' "$progname" "$in_file" "$detector" "$out_file" >&2
+printf '%s: channel map: %s\n' "$progname" "$channel_map" >&2
+
+if [ "$dry_run" -eq 1 ]; then
+    printf 'WIRECELL_PATH=%s\n' "${WIRECELL_PATH:-}"
+    printf '%q ' "${cmd[@]}"; printf '\n'
+    exit 0
+fi
+
+exec "${cmd[@]}"
