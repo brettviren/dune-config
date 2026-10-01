@@ -27,6 +27,7 @@ function(
     max_records = 0,         // max records from first_record; 0 = all remaining
 )
 {
+    stage: 'daq-to-frame',  // the job's stage name (required since Phlex 0.4)
     driver: {
         cpp: 'dune_daq_phlex_driver',
         uses_sources: ['daq'],   // drive the trigger records this source found
