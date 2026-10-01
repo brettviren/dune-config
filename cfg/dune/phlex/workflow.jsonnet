@@ -45,6 +45,7 @@ function(
     nevents       = 1,
     wct_log_sink  = "",
     wct_log_level = "",
+    stage         = "",            // phlex job stage (required by Phlex >= 0.4); "" -> wct_job
 )
 
 local src = sources[in_kind];
@@ -63,6 +64,8 @@ local with_log = {
 };
 
 {
+    stage: if stage == "" then wct_job else stage,
+
     driver: {
         cpp: "generate_layers",
         layers: { event: { parent: "job", total: nevents, starting_number: 1 } },

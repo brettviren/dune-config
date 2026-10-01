@@ -13,6 +13,8 @@ local sim_sp = workflow(
     in_file="depos.npz", out_file="frames.npz",
 );
 assert sim_sp.driver.cpp == "generate_layers" : "driver";
+assert sim_sp.stage == "sim-sigproc" : "stage defaults to the WCT job name";
+assert workflow(detname="pdhd", wct_job="sigproc", stage="sp").stage == "sp" : "stage override";
 assert sim_sp.sources.source.cpp == "wcp_deposet_source_file" : "deposet source module";
 assert sim_sp.sources.source.wct_tla.inname == "depos.npz" : "input file";
 assert sim_sp.modules.wct.cpp == "wcp_deposet_to_frame" : "deposet->frame executor";
