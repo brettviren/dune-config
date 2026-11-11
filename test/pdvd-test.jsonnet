@@ -42,7 +42,7 @@ assert bot.adc.baselines != top.adc.baselines : "bottom/top baselines differ";
 
 // --- SP tuning specific to PDVD --------------------------------------------
 assert bot.sigproc.use_multi_plane_protection == true : "PDVD enables multi-plane protection";
-assert bot.sigproc.troi_col_th_factor == 5.0 : "PDVD troi_col_th_factor";
+assert bot.sigproc.troi_col_th_factor == 2.5 : "PDVD troi_col_th_factor (ddm-tv6)";
 assert bot.sigproc.plane2layer == [0, 1, 2] : "PDVD standard plane ordering";
 
 // --- registry + default variant --------------------------------------------

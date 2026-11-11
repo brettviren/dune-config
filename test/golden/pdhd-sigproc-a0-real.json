@@ -1,65 +1,12 @@
 [
    {
+      "_pnode": {
+         "nin": 0,
+         "nout": 1
+      },
       "data": { },
       "name": "wcphlex_frame_source",
       "type": "FrameBoundarySource"
-   },
-   {
-      "data": {
-         "ADC_mV": 11702142857.142859,
-         "anode": "AnodePlane:apa0",
-         "ctoffset": 1000,
-         "dft": "FftwDFT:dft_apa0",
-         "elecresponse": "ColdElecResponse:elec_apa0",
-         "fft_flag": 0,
-         "field_response": "FieldResponse:fr_apa0",
-         "filter_responses": [
-            "FilterResponse:fltresp_apa0_0",
-            "FilterResponse:fltresp_apa0_1",
-            "FilterResponse:fltresp_apa0_2"
-         ],
-         "ftoffset": 0,
-         "isWrapped": false,
-         "lroi_jump_one_bin": 1,
-         "lroi_rebin": 6,
-         "lroi_th_factor": 3.5,
-         "lroi_th_factor1": 0.69999999999999996,
-         "per_chan_resp": "",
-         "plane2layer": [
-            0,
-            2,
-            1
-         ],
-         "postgain": 1,
-         "r_fake_signal_high_th": 750,
-         "r_fake_signal_high_th_ind_factor": 1,
-         "r_fake_signal_low_th": 375,
-         "r_fake_signal_low_th_ind_factor": 1,
-         "r_low_peak_sep_threshold_pre": 1200,
-         "r_sep_peak": 6,
-         "r_th_factor": 3,
-         "r_th_peak": 3,
-         "sparse": true,
-         "troi_col_th_factor": 2.5,
-         "troi_ind_th_factor": 3,
-         "use_multi_plane_protection": false,
-         "use_roi_debug_mode": false,
-         "wiener_filter_tight_U": "Wiener_tight_U_APA1",
-         "wiener_filter_tight_V": "Wiener_tight_V_APA1",
-         "wiener_filter_tight_W": "Wiener_tight_W_APA1"
-      },
-      "name": "sigproc_apa0",
-      "type": "OmnibusSigProc"
-   },
-   {
-      "data": { },
-      "name": "wcphlex_frame_sink",
-      "type": "FrameBoundarySink"
-   },
-   {
-      "data": { },
-      "name": "dft_apa0",
-      "type": "FftwDFT"
    },
    {
       "data": {
@@ -67,24 +14,6 @@
       },
       "name": "wires_apa0",
       "type": "WireSchemaFile"
-   },
-   {
-      "data": {
-         "filename": "np04hd-garfield-6paths.json.bz2"
-      },
-      "name": "fr_apa0",
-      "type": "FieldResponse"
-   },
-   {
-      "data": {
-         "gain": 2.2430470818000003e-12,
-         "nticks": 6125,
-         "postgain": 1,
-         "shaping": 2200,
-         "tick": 500
-      },
-      "name": "elec_apa0",
-      "type": "ColdElecResponse"
    },
    {
       "data": {
@@ -106,6 +35,29 @@
       },
       "name": "apa0",
       "type": "AnodePlane"
+   },
+   {
+      "data": { },
+      "name": "dft_apa0",
+      "type": "FftwDFT"
+   },
+   {
+      "data": {
+         "filename": "np04hd-garfield-6paths.json.bz2"
+      },
+      "name": "fr_apa0",
+      "type": "FieldResponse"
+   },
+   {
+      "data": {
+         "gain": 2.2430470818000003e-12,
+         "nticks": 6125,
+         "postgain": 1,
+         "shaping": 2200,
+         "tick": 500
+      },
+      "name": "elec_apa0",
+      "type": "ColdElecResponse"
    },
    {
       "data": {
@@ -287,6 +239,66 @@
       },
       "name": "Wire_col",
       "type": "HfFilter"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "ADC_mV": 11702142857.142859,
+         "anode": "AnodePlane:apa0",
+         "ctoffset": 1000,
+         "dft": "FftwDFT:dft_apa0",
+         "elecresponse": "ColdElecResponse:elec_apa0",
+         "fft_flag": 0,
+         "field_response": "FieldResponse:fr_apa0",
+         "filter_responses": [
+            "FilterResponse:fltresp_apa0_0",
+            "FilterResponse:fltresp_apa0_1",
+            "FilterResponse:fltresp_apa0_2"
+         ],
+         "ftoffset": 0,
+         "isWrapped": false,
+         "lroi_jump_one_bin": 1,
+         "lroi_rebin": 6,
+         "lroi_th_factor": 3.5,
+         "lroi_th_factor1": 0.69999999999999996,
+         "per_chan_resp": "",
+         "plane2layer": [
+            0,
+            2,
+            1
+         ],
+         "postgain": 1,
+         "r_fake_signal_high_th": 750,
+         "r_fake_signal_high_th_ind_factor": 1,
+         "r_fake_signal_low_th": 375,
+         "r_fake_signal_low_th_ind_factor": 1,
+         "r_low_peak_sep_threshold_pre": 1200,
+         "r_sep_peak": 6,
+         "r_th_factor": 3,
+         "r_th_peak": 3,
+         "sparse": true,
+         "troi_col_th_factor": 5,
+         "troi_ind_th_factor": 3,
+         "use_multi_plane_protection": false,
+         "use_roi_debug_mode": false,
+         "wiener_filter_tight_U": "Wiener_tight_U_APA1",
+         "wiener_filter_tight_V": "Wiener_tight_V_APA1",
+         "wiener_filter_tight_W": "Wiener_tight_W_APA1"
+      },
+      "name": "sigproc_apa0",
+      "type": "OmnibusSigProc"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 0
+      },
+      "data": { },
+      "name": "wcphlex_frame_sink",
+      "type": "FrameBoundarySink"
    },
    {
       "data": {
