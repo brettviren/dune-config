@@ -33,12 +33,15 @@ local a   = det.anodes[ai];
 local pfx = service_prefix;
 
 // --- derived timing ---------------------------------------------------------
+// The response plane belongs to this anode's field response (anodes of one
+// detector may use different field responses), so timing is per anode.
+local response_plane  = a.field.response_plane;
 local tick            = det.daq.tick;
 local nticks_daq      = det.daq.nticks;
-local response_nticks = wc.roundToInt(det.response_plane / det.lar.drift_speed / tick);
+local response_nticks = wc.roundToInt(response_plane / det.lar.drift_speed / tick);
 local nticks_ductor   = nticks_daq + response_nticks;
 local readout_time    = nticks_ductor * tick;
-local start_time      = det.sim.tick0_time - det.response_plane / det.lar.drift_speed;
+local start_time      = det.sim.tick0_time - response_plane / det.lar.drift_speed;
 
 // --- leaf service inodes (no dependencies) ----------------------------------
 local dft = {
@@ -65,7 +68,8 @@ local fr = {
     data: { filename: a.field.filename },
 };
 
-// Electronics response (polymorphic: ColdElecResponse or JsonElecResponse).
+// Electronics response (polymorphic: ColdElecResponse or JsonElecResponse;
+// the fields each type needs are checked by lib/schema.jsonnet elec_fields).
 local elec = {
     type: a.elec.type,
     name: pfx + "elec_" + a.name,
@@ -98,8 +102,8 @@ local anode = {
 };
 
 // PIR short padding must exceed the full field-response duration; 2x the drift
-// transit time safely covers both PDHD (100us) and PDVD (132.5us).
-local pir_short_padding = det.response_plane / det.lar.drift_speed * 2.0;
+// transit time safely covers PDHD (100us), PDVD (132.5us) and FDVD (113us).
+local pir_short_padding = response_plane / det.lar.drift_speed * 2.0;
 
 local pir(plane) = {
     type: "PlaneImpactResponse",
@@ -236,7 +240,13 @@ local digitizer = {
 local splat = {
     type: "DepoFluxSplat",
     name: pfx + "splat_" + a.name,
+    // The window spans the same (extended) time as the ductor: it starts
+    // response_plane/drift_speed before tick0_time and runs for the DAQ
+    // window plus the response ticks.
     data: det.splat + {
+        tick:            tick,
+        window_start:    start_time,
+        window_duration: readout_time,
         anode:          wc.tn(anode),
         field_response: wc.tn(fr),   // only period and origin are used
     },
@@ -299,6 +309,7 @@ local sigproc = {
     a:: a,
     ai:: ai,
     timing:: {
+        response_plane: response_plane,
         tick: tick, nticks_daq: nticks_daq, response_nticks: response_nticks,
         nticks_ductor: nticks_ductor, readout_time: readout_time, start_time: start_time,
     },

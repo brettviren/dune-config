@@ -100,6 +100,8 @@ local make_anode(a) =
         // Both bottom and top drift use the same nominal PDVD field response.
         field: {
             filename: "protodunevd_FR_norminal_260324.json.bz2",
+            // Distance from the collection plane where this file's paths start.
+            response_plane: response_plane,
         },
 
         // No frequency-domain filter response for PDVD.
@@ -208,9 +210,6 @@ local base = schema.make({
     lar: lar,
     sim: sim,
 
-    // Response plane distance from collection wires.  PDVD: 18.1 cm (vs PDHD: 10 cm).
-    response_plane: response_plane,
-
     wires: {
         filename: "protodunevd-wires-larsoft-v3.json.bz2",
     },
@@ -238,14 +237,10 @@ local base = schema.make({
     // Values are per wire-plane: [U, V, W].
     // No empirically derived values exist for PDVD yet (requires "wcpy gen morse-*").
     // Using zeros for now (conservative: splat truth is tighter than SP output).
+    // The splat window (tick, start, duration) is derived per anode from its
+    // field.response_plane in job/parts.jsonnet.
     splat: {
         sparse:          true,
-        tick:            daq.tick,
-        // window_start: extend backward from tick0_time by the field-response headroom
-        // (same calculation as sim.jsonnet start_time).
-        window_start:    sim.tick0_time - response_plane / lar.drift_speed,
-        // window_duration: full DAQ window plus the field-response headroom ticks.
-        window_duration: (daq.nticks + wc.roundToInt(response_plane / lar.drift_speed / daq.tick)) * daq.tick,
         reference_time:  0.0,
         smear_long: [0.0, 0.0, 0.0],
         smear_tran: [0.0, 0.0, 0.0],

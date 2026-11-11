@@ -91,6 +91,8 @@ local make_anode(n) =
         // Field response file: one generic 1D response for every APA.
         field: {
             filename: "dune-garfield-1d565.json.bz2",
+            // Distance from the collection plane where this file's paths start.
+            response_plane: response_plane,
         },
 
         // PDSP has no SP deconvolution-correction filter_response.
@@ -181,8 +183,6 @@ local base = schema.make({
     lar: lar,
     sim: sim,
 
-    response_plane: response_plane,
-
     wires: {
         filename: "protodune-wires-larsoft-v4.json.bz2",
     },
@@ -206,11 +206,10 @@ local base = schema.make({
 
     // DepoFluxSplat parameters.  PDHD reuses these PDSP values (same
     // field-response family); values determined empirically ("wcpy gen morse-*").
+    // The splat window (tick, start, duration) is derived per anode from its
+    // field.response_plane in job/parts.jsonnet.
     splat: {
         sparse:          true,
-        tick:            daq.tick,
-        window_start:    sim.tick0_time - response_plane / lar.drift_speed,
-        window_duration: (daq.nticks + wc.roundToInt(response_plane / lar.drift_speed / daq.tick)) * daq.tick,
         reference_time:  0.0,
         smear_long: [2.691862363980221, 2.6750200122535057, 2.7137567141154055],
         smear_tran: [0.7377218875719689, 0.7157764520393882, 0.13980698710556544],
