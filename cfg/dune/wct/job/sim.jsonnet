@@ -7,8 +7,8 @@
 // Component definitions live in parts.jsonnet; this file only composes them.
 //
 // TLA parameters:
-//   source_name    instance name for DepoSetBoundarySource (executor-injected)
-//   sink_name      instance name for FrameBoundarySink     (executor-injected)
+//   sources        [{type,name}] boundary source inode(s)   (executor-injected)
+//   sinks          [{type,name}] boundary sink inode(s)     (executor-injected)
 //   app_name       instance name for the Pgrapher          (executor-injected)
 //   detector       canonical detector name, e.g. "pdhd" / "pdvd"
 //   anode_index    anode index into det.anodes[] (string, e.g. "0")
@@ -22,8 +22,8 @@ local ends  = import "../lib/ends.jsonnet";
 local parts = import "parts.jsonnet";
 
 function(
-    source_name    = "wcphlex_deposet_source",
-    sink_name      = "wcphlex_frame_sink",
+    sources        = [ends.boundary.deposet_source],   // executor-injected
+    sinks          = [ends.boundary.frame_sink],   // executor-injected
     app_name       = "wcphlex_pgrapher",
     detector       = "pdhd",
     anode_index    = "0",
@@ -35,8 +35,8 @@ local P = parts(detector, anode_index, service_prefix, variant);
 
 // sim = the "sim" composite input end (deposet boundary + drift/sim/digitize)
 // feeding a frame sink.
-local input  = ends.inputs.sim(P, source_name);
-local output = ends.outputs["frame-file"](P, sink_name);
+local input  = ends.inputs.sim(P, sources[0]);
+local output = ends.outputs["frame-file"](P, sinks[0]);
 
 local graph = g.pipeline(input.pnodes + output.pnodes);
 

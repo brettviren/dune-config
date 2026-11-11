@@ -2,7 +2,7 @@
 #
 # integration-run.sh -- ON-DEMAND phlex(ed) integration run of the dune-config
 # stack (beads ddm-4pz.12).  NOT a default ctest: it needs the built phlex/WCT
-# runtime (wcp_* modules), the WCT data files (reference/wire-cell-data), and a
+# runtime (wcph_* modules), the WCT data files (reference/wire-cell-data), and a
 # deposet input -- i.e. a full runtime env, and it reads reference/ (which the
 # project rule keeps out of automated unit tests).
 #

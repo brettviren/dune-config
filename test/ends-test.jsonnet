@@ -11,10 +11,10 @@ local P = parts("pdhd", "0", "", "ideal");
 
 // Assemble a signal-processing job with a chosen input KIND -- this is the
 // ddm-4pz.10 swap expressed as a one-liner over the registries.
-local sp_job(in_kind, src_name) =
-    local input  = ends.inputs[in_kind](P, src_name);
+local sp_job(in_kind, src) =
+    local input  = ends.inputs[in_kind](P, src);
     local body   = ends.bodies.sigproc(P);
-    local output = ends.outputs["frame-file"](P, "wcphlex_frame_sink");
+    local output = ends.outputs["frame-file"](P, ends.boundary.frame_sink);
     g.application(
         g.pipeline(input.pnodes + body.pnodes + output.pnodes),
         name="wcphlex_pgrapher",
@@ -24,9 +24,9 @@ local count(cfg, t) = std.length([c for c in cfg if c.type == t]);
 local has(cfg, t)   = count(cfg, t) > 0;
 
 // --- every frame-producing input kind yields a valid SP job ----------------
-local from_sim   = sp_job("sim",        "wcphlex_deposet_source");
-local from_frame = sp_job("frame-file", "wcphlex_frame_source");
-local from_daq   = sp_job("daq-hdf",    "wcphlex_frame_source");
+local from_sim   = sp_job("sim",        ends.boundary.deposet_source);
+local from_frame = sp_job("frame-file", ends.boundary.frame_source);
+local from_daq   = sp_job("daq-hdf",    ends.boundary.frame_source);
 
 assert ends.frame_inputs == ["sim", "frame-file", "daq-hdf"] : "frame-producing input kinds";
 assert count(from_sim, "OmnibusSigProc") == 1 : "sim->SP has sigproc";

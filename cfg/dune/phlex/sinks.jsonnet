@@ -2,34 +2,26 @@
 //
 // phlex sink modules keyed by job-level output kind -- the phlex-layer mirror of
 // the WCT output ends.  Each entry declares the product it consumes and a
-// make(filename, input_from) -> phlex sink-module spec.  `input_from` is the
-// instance name of the upstream (executor) module whose product to write
-// (phlex routes by creator = module instance name).
+// make(filename, input_from) -> phlex sink-module spec in the wire-cell-phlex
+// shape-executor form (cpp "wcph_<type>_sink").  `input_from` is the module
+// label of the upstream executor whose product to write: a Phlex transform's
+// output creator is its own module label, and its layer is its input's layer.
 //
 // wct_config values name generic file-IO WCT graphs from wire-cell-phlex.
 
-{
-    "frame-file":: {
-        product:: "frame",
-        make(filename, input_from):: {
-            cpp: "wcp_frame_sink_file",
-            wct_config: "frame-file-sink.jsonnet",
-            wct_plugins: ["WireCellPgraph", "WireCellSio"],
-            input_layer: "event",
-            input_from: input_from,
-            wct_tla: { outname: filename },
-        },
+local wcph_sink(product, wct_config) = {
+    product:: product,
+    make(filename, input_from):: {
+        cpp: "wcph_" + product + "_sink",
+        wct_config: wct_config,
+        wct_plugins: ["WireCellPgraph", "WireCellSio"],
+        inputs: [{ creator: input_from, layer: "event", suffix: product }],
+        outputs: [],
+        wct_tla: { outname: filename },
     },
+};
 
-    "deposet-file":: {
-        product:: "deposet",
-        make(filename, input_from):: {
-            cpp: "wcp_deposet_sink_file",
-            wct_config: "deposet-file-sink.jsonnet",
-            wct_plugins: ["WireCellPgraph", "WireCellSio"],
-            input_layer: "event",
-            input_from: input_from,
-            wct_tla: { outname: filename },
-        },
-    },
+{
+    "frame-file":: wcph_sink("frame", "frame-file-sink.jsonnet"),
+    "deposet-file":: wcph_sink("deposet", "deposet-file-sink.jsonnet"),
 }

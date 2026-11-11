@@ -16,8 +16,8 @@ local ends  = import "../lib/ends.jsonnet";
 local parts = import "parts.jsonnet";
 
 function(
-    source_name    = "wcphlex_deposet_source",
-    sink_name      = "wcphlex_frame_sink",
+    sources        = [ends.boundary.deposet_source],   // executor-injected
+    sinks          = [ends.boundary.frame_sink],   // executor-injected
     app_name       = "wcphlex_pgrapher",
     detector       = "pdhd",
     anode_index    = "0",
@@ -27,9 +27,9 @@ function(
 
 local P = parts(detector, anode_index, service_prefix, variant);
 
-local input  = ends.inputs["deposet-file"](P, source_name);
+local input  = ends.inputs["deposet-file"](P, sources[0]);
 local body   = ends.bodies.splat(P);
-local output = ends.outputs["frame-file"](P, sink_name);
+local output = ends.outputs["frame-file"](P, sinks[0]);
 
 local graph = g.pipeline(input.pnodes + body.pnodes + output.pnodes);
 

@@ -21,10 +21,26 @@
 // that PRODUCES frames; "frame-file" and "daq-hdf" are bare frame boundaries.
 //
 // Each end/body takes the per-anode parts object P (see job/parts.jsonnet).
+// Input/output ends also take the boundary inode {type, name} that the
+// wire-cell-phlex shape executor injects as an element of its "sources" /
+// "sinks" TLA arrays; the defaults (boundary.*) are used only when a job is
+// compiled outside an executor (tests, goldens).
 
 local g = import "graph.jsonnet";
 
+// A boundary inode as the executor injects it ({type, name}), made a full
+// component (boundary nodes take no configuration).
+local bnode(inode) = { type: inode.type, name: inode.name, data: {} };
+
 {
+    // Default boundary inodes, matching what the executor would inject.
+    boundary:: {
+        deposet_source: { type: "DepoSetBoundarySource", name: "wcphlex_deposet_source" },
+        frame_source:   { type: "FrameBoundarySource",   name: "wcphlex_frame_source" },
+        frame_sink:     { type: "FrameBoundarySink",     name: "wcphlex_frame_sink" },
+        deposet_sink:   { type: "DepoSetBoundarySink",   name: "wcphlex_deposet_sink" },
+    },
+
     // -----------------------------------------------------------------------
     // Processing bodies (port-bearing sub-graphs).
     // -----------------------------------------------------------------------
@@ -61,26 +77,26 @@ local g = import "graph.jsonnet";
     // -----------------------------------------------------------------------
     inputs:: {
         // deposets in (e.g. NPZ deposet file)
-        "deposet-file":: function(P, name="wcphlex_deposet_source") {
-            pnodes: [g.source({ type: "DepoSetBoundarySource", name: name, data: {} })],
+        "deposet-file":: function(P, src=$.boundary.deposet_source) {
+            pnodes: [g.source(bnode(src))],
         },
 
         // frames in (e.g. NPZ frame file)
-        "frame-file":: function(P, name="wcphlex_frame_source") {
-            pnodes: [g.source({ type: "FrameBoundarySource", name: name, data: {} })],
+        "frame-file":: function(P, src=$.boundary.frame_source) {
+            pnodes: [g.source(bnode(src))],
         },
 
         // raw DUNE-DAQ HDF5 in -> frame.  STUB: at the WCT level this is just a
         // frame boundary; the decode (dune-daq-codec) + file-driven drive live in
         // a future phlex DAQ source, gated on Phlex 0.3.0 (ddm-3j8.1.6, ddm-4pz.10).
-        "daq-hdf":: function(P, name="wcphlex_frame_source") {
-            pnodes: [g.source({ type: "FrameBoundarySource", name: name, data: {} })],
+        "daq-hdf":: function(P, src=$.boundary.frame_source) {
+            pnodes: [g.source(bnode(src))],
         },
 
         // simulation: deposets in, drift+sim+digitize -> frame (composite end).
-        "sim":: function(P, name="wcphlex_deposet_source")
+        "sim":: function(P, src=$.boundary.deposet_source)
             {
-                pnodes: $.inputs["deposet-file"](P, name).pnodes + $.bodies.sim(P).pnodes,
+                pnodes: $.inputs["deposet-file"](P, src).pnodes + $.bodies.sim(P).pnodes,
             },
     },
 
@@ -88,11 +104,11 @@ local g = import "graph.jsonnet";
     // Output ends (boundary sinks), keyed by job-level output kind.
     // -----------------------------------------------------------------------
     outputs:: {
-        "frame-file":: function(P, name="wcphlex_frame_sink") {
-            pnodes: [g.sink({ type: "FrameBoundarySink", name: name, data: {} })],
+        "frame-file":: function(P, snk=$.boundary.frame_sink) {
+            pnodes: [g.sink(bnode(snk))],
         },
-        "deposet-file":: function(P, name="wcphlex_deposet_sink") {
-            pnodes: [g.sink({ type: "DepoSetBoundarySink", name: name, data: {} })],
+        "deposet-file":: function(P, snk=$.boundary.deposet_sink) {
+            pnodes: [g.sink(bnode(snk))],
         },
     },
 

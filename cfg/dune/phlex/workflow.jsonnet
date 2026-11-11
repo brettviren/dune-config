@@ -20,15 +20,17 @@
 local sources = import "sources.jsonnet";
 local sinks   = import "sinks.jsonnet";
 
-// WCT executor module per data-flow.  Plugins are a superset sufficient for any
-// of the dune/wct/job bodies (Gen for sim, SigProc for sigproc, Aux/Pgraph always).
+// WCT executor module per data-flow (wire-cell-phlex shape executors; cpp is
+// the plugin library name, libwcph_<cpp-suffix>.so).  Plugins are a superset
+// sufficient for any of the dune/wct/job bodies (Gen for sim, SigProc for
+// sigproc, Aux/Pgraph always).
 local executors = {
     deposet_to_frame: {
-        cpp: "wcp_deposet_to_frame",
+        cpp: "wcph_deposet_to_frame",
         wct_plugins: ["WireCellPgraph", "WireCellGen", "WireCellSigProc", "WireCellAux"],
     },
     frame_to_frame: {
-        cpp: "wcp_frame_filter",
+        cpp: "wcph_frame_filter",   // registers node wcph_frame_to_frame
         wct_plugins: ["WireCellPgraph", "WireCellGen", "WireCellSigProc", "WireCellAux"],
     },
 };
@@ -80,7 +82,10 @@ local with_log = {
             cpp: ex.cpp,
             wct_config: "dune/wct/job/" + wct_job + ".jsonnet",
             wct_plugins: ex.wct_plugins,
-            input_layer: "event",
+            inputs: [src.output],
+            // a transform's output creator/layer are fixed by Phlex (its module
+            // label and its input's layer); only the suffix is set
+            outputs: [{ suffix: snk.product }],
             wct_tla: {
                 detector:    detname,
                 anode_index: "%d" % anode_index,  // phlex TLAs are strings

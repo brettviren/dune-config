@@ -19,8 +19,8 @@ local ends  = import "../lib/ends.jsonnet";
 local parts = import "parts.jsonnet";
 
 function(
-    source_name    = "wcphlex_deposet_source",
-    sink_name      = "wcphlex_frame_sink",
+    sources        = [ends.boundary.deposet_source],   // executor-injected
+    sinks          = [ends.boundary.frame_sink],   // executor-injected
     app_name       = "wcphlex_pgrapher",
     detector       = "pdhd",
     anode_index    = "0",
@@ -33,9 +33,9 @@ local P = parts(detector, anode_index, service_prefix, variant);
 // The "sim" input end (deposets -> frames) feeding the sigproc body: swapping
 // ends.inputs.sim for ends.inputs["frame-file"]/["daq-hdf"] yields the plain
 // sigproc job -- that is the SP-input swap (ddm-4pz.10).
-local input  = ends.inputs.sim(P, source_name);
+local input  = ends.inputs.sim(P, sources[0]);
 local body   = ends.bodies.sigproc(P);
-local output = ends.outputs["frame-file"](P, sink_name);
+local output = ends.outputs["frame-file"](P, sinks[0]);
 
 local graph = g.pipeline(input.pnodes + body.pnodes + output.pnodes);
 

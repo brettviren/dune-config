@@ -11,24 +11,28 @@ local frm = sp(detname="pdhd", sp_input="frame-file", in_file="digits.npz", out_
 local daq = sp(detname="pdhd", sp_input="daq-hdf",    in_file="digits.npz", out_file="sig.npz");
 
 // all three produce signal-processed frames at the same sink
-assert sim.modules.sink.cpp == "wcp_frame_sink_file" : "sim sink";
-assert frm.modules.sink.cpp == "wcp_frame_sink_file" : "frame sink";
-assert daq.modules.sink.cpp == "wcp_frame_sink_file" : "daq sink";
+assert sim.modules.sink.cpp == "wcph_frame_sink" : "sim sink";
+assert frm.modules.sink.cpp == "wcph_frame_sink" : "frame sink";
+assert daq.modules.sink.cpp == "wcph_frame_sink" : "daq sink";
 
 // sim: deposet source -> sim-sigproc body (drift+sim+SP) via deposet_to_frame
-assert sim.sources.source.cpp == "wcp_deposet_source_file" : "sim reads deposets";
-assert sim.modules.wct.cpp == "wcp_deposet_to_frame" : "sim executor";
+assert sim.sources.source.cpp == "wcph_deposet_source" : "sim reads deposets";
+assert sim.modules.wct.cpp == "wcph_deposet_to_frame" : "sim executor";
 assert sim.modules.wct.wct_config == "dune/wct/job/sim-sigproc.jsonnet" : "sim body";
 
 // frame-file: frame source -> sigproc body via frame_filter
-assert frm.sources.source.cpp == "wcp_frame_source_file" : "frame reads frames";
-assert frm.modules.wct.cpp == "wcp_frame_filter" : "frame executor";
+assert frm.sources.source.cpp == "wcph_frame_source" : "frame reads frames";
+assert frm.modules.wct.cpp == "wcph_frame_filter" : "frame executor";
 assert frm.modules.wct.wct_config == "dune/wct/job/sigproc.jsonnet" : "frame body";
 
 // daq-hdf: SAME SP processing + sink as frame-file; ONLY the source differs.
-assert daq.modules == frm.modules : "daq-hdf shares the frame-file SP processing + sink";
+local but_inputs(m) = { [k]: m[k] for k in std.objectFields(m) if k != "inputs" };
+assert daq.modules.sink == frm.modules.sink : "daq-hdf shares the frame-file sink";
+assert but_inputs(daq.modules.wct) == but_inputs(frm.modules.wct)
+       : "daq-hdf shares the frame-file SP processing (only its input creator differs)";
+assert daq.modules.wct.inputs[0].creator == "from_arrow" : "daq frames come from the Arrow adapter";
 assert daq.sources != frm.sources : "daq-hdf differs only in the input source";
-assert daq.sources.source.cpp == "wcp_daq_hdf_source" : "daq-hdf gated source module";
+assert daq.sources.source.cpp == "dune_daq_phlex_source" : "daq-hdf gated source module";
 
 // detector + variant ride through the swap unchanged
 assert sim.modules.wct.wct_tla.detector == "pdhd" : "detname carried";

@@ -15,21 +15,26 @@ local sim_sp = workflow(
 assert sim_sp.driver.cpp == "generate_layers" : "driver";
 assert sim_sp.stage == "sim-sigproc" : "stage defaults to the WCT job name";
 assert workflow(detname="pdhd", wct_job="sigproc", stage="sp").stage == "sp" : "stage override";
-assert sim_sp.sources.source.cpp == "wcp_deposet_source_file" : "deposet source module";
+assert sim_sp.sources.source.cpp == "wcph_deposet_source" : "deposet source module";
 assert sim_sp.sources.source.wct_tla.inname == "depos.npz" : "input file";
-assert sim_sp.modules.wct.cpp == "wcp_deposet_to_frame" : "deposet->frame executor";
+assert sim_sp.modules.wct.cpp == "wcph_deposet_to_frame" : "deposet->frame executor";
 assert sim_sp.modules.wct.wct_config == "dune/wct/job/sim-sigproc.jsonnet" : "references WCT body";
 assert sim_sp.modules.wct.wct_tla.detector == "pdhd" : "detname TLA";
 assert sim_sp.modules.wct.wct_tla.variant == "ideal" : "variant TLA default";
 assert sim_sp.modules.wct.wct_tla.anode_index == "0" : "anode_index TLA is a string";
-assert sim_sp.modules.sink.cpp == "wcp_frame_sink_file" : "frame sink module";
-assert sim_sp.modules.sink.input_from == "wct" : "sink reads the executor's product";
+assert sim_sp.modules.sink.cpp == "wcph_frame_sink" : "frame sink module";
+assert sim_sp.modules.sink.inputs == [{ creator: "wct", layer: "event", suffix: "frame" }]
+       : "sink reads the executor's product";
+assert sim_sp.modules.wct.inputs == [{ creator: "input", layer: "event", suffix: "deposet" }]
+       : "executor reads the source's product";
+assert sim_sp.modules.wct.outputs == [{ suffix: "frame" }] : "executor output suffix only";
+assert sim_sp.sources.source.inputs == [] : "source has no inputs";
 assert sim_sp.modules.sink.wct_tla.outname == "frames.npz" : "output file";
 
 // --- SP fed by a frame file: frames -> sigproc -> frames -------------------
 local frame_sp = workflow(detname="pdvd", wct_job="sigproc", in_kind="frame-file");
-assert frame_sp.sources.source.cpp == "wcp_frame_source_file" : "frame source module";
-assert frame_sp.modules.wct.cpp == "wcp_frame_filter" : "frame->frame executor";
+assert frame_sp.sources.source.cpp == "wcph_frame_source" : "frame source module";
+assert frame_sp.modules.wct.cpp == "wcph_frame_filter" : "frame->frame executor";
 assert frame_sp.modules.wct.wct_config == "dune/wct/job/sigproc.jsonnet" : "references sigproc body";
 assert frame_sp.modules.wct.wct_tla.detector == "pdvd" : "detname";
 
@@ -39,8 +44,8 @@ assert realvar.modules.wct.wct_tla.variant == "real" : "variant override reaches
 
 // --- daq-hdf assembles (gated module referenced) ---------------------------
 local daq_sp = workflow(detname="pdhd", wct_job="sigproc", in_kind="daq-hdf");
-assert daq_sp.sources.source.cpp == "wcp_daq_hdf_source" : "daq-hdf source (gated module)";
-assert daq_sp.modules.wct.cpp == "wcp_frame_filter" : "still a frame->frame executor";
+assert daq_sp.sources.source.cpp == "dune_daq_phlex_source" : "daq-hdf source (gated module)";
+assert daq_sp.modules.wct.cpp == "wcph_frame_filter" : "still a frame->frame executor";
 
 // --- anode_index, nevents, optional WCT logging ----------------------------
 local withlog = workflow(
@@ -57,7 +62,7 @@ assert !std.objectHas(frame_sp.modules.wct, "wct_log_sink") : "no log knob by de
 // --- registries expose the expected kinds ----------------------------------
 local sources = import "dune/phlex/sources.jsonnet";
 local sinks   = import "dune/phlex/sinks.jsonnet";
-assert sinks["deposet-file"].make("x.npz", "wct").cpp == "wcp_deposet_sink_file"
+assert sinks["deposet-file"].make("x.npz", "wct").cpp == "wcph_deposet_sink"
        : "deposet sink module in registry";
 assert sources["daq-hdf"].gated == true : "daq-hdf source is marked gated";
 
