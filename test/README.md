@@ -10,7 +10,7 @@ the WCT jsonnet share dir on the path; CMake discovers it from
 | `dune_config_jsonnet_smoke` | `smoke-workflow.jsonnet` | `dune/` namespace resolves |
 | `dune_config_schema_variant` | `schema-variant-test.jsonnet` | schema defaults/validate + variant overlays |
 | `dune_config_graph` | `graph-test.jsonnet` | pnode composition + service de-dup |
-| `dune_config_pdhd` / `_pdvd` | `pdhd-test.jsonnet` / `pdvd-test.jsonnet` | detector ports |
+| `dune_config_pdhd` / `_pdvd` / `_fdvd` | `pdhd-test.jsonnet` / `pdvd-test.jsonnet` / `fdvd-test.jsonnet` | detector ports |
 | `dune_config_pdhd_variant` | `pdhd-variant-test.jsonnet` | PDHD ideal-vs-real overlay (only APA0 field differs) |
 | `dune_config_job` | `job-test.jsonnet` | job builder chains + de-dup |
 | `dune_config_ends` | `ends-test.jsonnet` | I/O ends registry + SP-input swap (WCT level) |
@@ -37,7 +37,9 @@ component-by-component (exact, `--float-tol 0`) to the golden via
 WCT=extern/envs/xerosere/view/share/wirecell      # or any prefix with share/wirecell
 for spec in "sim pdhd 0" "sigproc pdhd 0" "sim-sigproc pdhd 0" "splat pdhd 0" \
             "sim pdvd 0" "sigproc pdvd 0" "sim-sigproc pdvd 0" "splat pdvd 0" \
-            "sim pdvd 4" "sigproc pdvd 4"; do
+            "sim pdvd 4" "sigproc pdvd 4" \
+            "sim fdvd 0" "sigproc fdvd 0" "sim-sigproc fdvd 0" "splat fdvd 0" \
+            "sim fdvd 200" "sigproc fdvd 200"; do
   set -- $spec
   jsonnet -J cfg -J "$WCT" --tla-str detector=$2 --tla-str anode_index=$3 \
       cfg/dune/wct/job/$1.jsonnet > test/golden/$2-$1-a$3.json

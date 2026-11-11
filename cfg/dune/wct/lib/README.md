@@ -24,7 +24,7 @@ g.application(graph, name="my_app")   // -> WCT config array (services first, th
 local schema  = import "dune/wct/lib/schema.jsonnet";
 local variant = import "dune/wct/lib/variant.jsonnet";
 local base = schema.make({ name:"demo", daq:{…}, lar:{…}, sim:{…},
-                           response_plane:…, wires:{…}, anodes:[…], sp_filters:[] });
+                           wires:{…}, anodes:[…], sp_filters:[], splat:{…} });
 local det  = { ideal: base,
                real:  variant.patch_anodes(base, {"2": { elec:{ gain: 7.8 } }}) }
              [variant.select(params)];

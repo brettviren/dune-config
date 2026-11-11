@@ -110,6 +110,13 @@ if(JSONNET_EXECUTABLE)
         "${CMAKE_CURRENT_SOURCE_DIR}/test/pdvd-test.jsonnet"
     )
 
+    add_test(NAME dune_config_fdvd
+      COMMAND "${JSONNET_EXECUTABLE}"
+        -J "${CMAKE_CURRENT_SOURCE_DIR}/cfg"
+        -J "${_wct_share}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/fdvd-test.jsonnet"
+    )
+
     # PDHD ideal-vs-real variant overlay (ddm-4pz.13).
     add_test(NAME dune_config_pdhd_variant
       COMMAND "${JSONNET_EXECUTABLE}"
@@ -148,6 +155,8 @@ if(JSONNET_EXECUTABLE)
         "sim|pdhd|0"  "sigproc|pdhd|0"  "sim-sigproc|pdhd|0"  "splat|pdhd|0"
         "sim|pdvd|0"  "sigproc|pdvd|0"  "sim-sigproc|pdvd|0"  "splat|pdvd|0"
         "sim|pdvd|4"  "sigproc|pdvd|4"
+        "sim|fdvd|0"  "sigproc|fdvd|0"  "sim-sigproc|fdvd|0"  "splat|fdvd|0"
+        "sim|fdvd|200"  "sigproc|fdvd|200"
       )
       foreach(_spec IN LISTS _golden_matrix)
         string(REPLACE "|" ";" _parts "${_spec}")

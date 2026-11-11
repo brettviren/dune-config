@@ -10,14 +10,15 @@
 // Each function is a lazy import (parsed only when accessed), built on
 // dune/wct/lib/schema.jsonnet and dune/wct/lib/variant.jsonnet.
 //
-// This registry starts empty; detector tasks add one entry each:
+// Detector tasks add one entry each:
 //   pdhd  -- beads ddm-4pz.4   (+ "real" variant, ddm-4pz.13)
 //   pdvd  -- beads ddm-4pz.5
 //   fd-hd -- beads ddm-4pz.14
-//   fd-vd -- beads ddm-4pz.15
+//   fdvd  -- beads ddm-4pz.15  (from dunereco dune10kt-vd)
 
 {
     pdhd: import "detectors/pdhd/detector.jsonnet",
     pdsp: import "detectors/pdsp/detector.jsonnet",
     pdvd: import "detectors/pdvd/detector.jsonnet",
+    fdvd: import "detectors/fdvd/detector.jsonnet",
 }

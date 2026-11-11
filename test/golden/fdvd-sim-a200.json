@@ -1,0 +1,322 @@
+[
+   {
+      "_pnode": {
+         "nin": 0,
+         "nout": 1
+      },
+      "data": { },
+      "name": "wcphlex_deposet_source",
+      "type": "DepoSetBoundarySource"
+   },
+   {
+      "data": {
+         "seed": 1
+      },
+      "name": "rng_anode200",
+      "type": "Random"
+   },
+   {
+      "data": {
+         "DL": 3.9999999999999998e-07,
+         "DT": 8.8000000000000015e-07,
+         "drift_speed": 0.0016056288906533874,
+         "fluctuate": true,
+         "lifetime": 10400000,
+         "rng": "Random:rng_anode200",
+         "xregions": [
+            {
+               "anode": 6521.5,
+               "cathode": 20.900000000000546,
+               "response": 6340.5
+            },
+            {
+               "anode": 6521.5,
+               "cathode": 20.900000000000546,
+               "response": 6340.5
+            }
+         ]
+      },
+      "name": "drifter_anode200",
+      "type": "Drifter"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "drifter": "Drifter:drifter_anode200"
+      },
+      "name": "deposet_drifter_anode200",
+      "type": "DepoSetDrifter"
+   },
+   {
+      "data": {
+         "filename": "dunevd10kt_3view_30deg_v6_refactored.json.bz2"
+      },
+      "name": "wires_anode200",
+      "type": "WireSchemaFile"
+   },
+   {
+      "data": {
+         "faces": [
+            {
+               "anode": 6521.5,
+               "cathode": 20.900000000000546,
+               "response": 6340.5
+            },
+            {
+               "anode": 6521.5,
+               "cathode": 20.900000000000546,
+               "response": 6340.5
+            }
+         ],
+         "ident": 200,
+         "nimpacts": 10,
+         "wire_schema": "WireSchemaFile:wires_anode200"
+      },
+      "name": "anode200",
+      "type": "AnodePlane"
+   },
+   {
+      "data": { },
+      "name": "dft_anode200",
+      "type": "FftwDFT"
+   },
+   {
+      "data": {
+         "filename": "protodunevd_FR_imbalance3p_260501.json.bz2"
+      },
+      "name": "fr_anode200",
+      "type": "FieldResponse"
+   },
+   {
+      "data": {
+         "filename": "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+         "nticks": 8725,
+         "postgain": 1.3600000000000001,
+         "tick": 500
+      },
+      "name": "elec_anode200",
+      "type": "JsonElecResponse"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft_anode200",
+         "field_response": "FieldResponse:fr_anode200",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 8725,
+         "overall_short_padding": 225456.83009770044,
+         "plane": 0,
+         "short_responses": [
+            "JsonElecResponse:elec_anode200"
+         ],
+         "tick": 500
+      },
+      "name": "pir0_anode200",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft_anode200",
+         "field_response": "FieldResponse:fr_anode200",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 8725,
+         "overall_short_padding": 225456.83009770044,
+         "plane": 1,
+         "short_responses": [
+            "JsonElecResponse:elec_anode200"
+         ],
+         "tick": 500
+      },
+      "name": "pir1_anode200",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft_anode200",
+         "field_response": "FieldResponse:fr_anode200",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 8725,
+         "overall_short_padding": 225456.83009770044,
+         "plane": 2,
+         "short_responses": [
+            "JsonElecResponse:elec_anode200"
+         ],
+         "tick": 500
+      },
+      "name": "pir2_anode200",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "anode": "AnodePlane:anode200",
+         "dft": "FftwDFT:dft_anode200",
+         "drift_speed": 0.0016056288906533874,
+         "first_frame_number": 0,
+         "fluctuate": true,
+         "nsigma": 3,
+         "pirs": [
+            "PlaneImpactResponse:pir0_anode200",
+            "PlaneImpactResponse:pir1_anode200",
+            "PlaneImpactResponse:pir2_anode200"
+         ],
+         "readout_time": 4362500,
+         "rng": "Random:rng_anode200",
+         "start_time": -112728.41504885022,
+         "tick": 500
+      },
+      "name": "transform_anode200",
+      "type": "DepoTransform"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "anode": "AnodePlane:anode200",
+         "fill": 0,
+         "nticks": 8500,
+         "tags": [ ],
+         "tbin": 225,
+         "toffset": 0
+      },
+      "name": "reframer_anode200",
+      "type": "Reframer"
+   },
+   {
+      "data": {
+         "anode": "AnodePlane:anode200",
+         "chanstat": "",
+         "dft": "FftwDFT:dft_anode200",
+         "nsamples": 8500,
+         "period": 500,
+         "spectra_file": "pdvd-top-noise-spectra-v3.json.bz2",
+         "wire_length_scale": 10
+      },
+      "name": "noise_model_anode200",
+      "type": "EmpiricalNoiseModel"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "dft": "FftwDFT:dft_anode200",
+         "model": "EmpiricalNoiseModel:noise_model_anode200",
+         "nsamples": 8500,
+         "replacement_percentage": 0.02,
+         "rng": "Random:rng_anode200"
+      },
+      "name": "addnoise_anode200",
+      "type": "AddNoise"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "anode": "AnodePlane:anode200",
+         "baselines": [
+            9.9999999999999995e-07,
+            9.9999999999999995e-07,
+            9.9999999999999995e-07
+         ],
+         "fullscale": [
+            0,
+            1.9999999999999999e-06
+         ],
+         "gain": 1,
+         "resolution": 14
+      },
+      "name": "digitizer_anode200",
+      "type": "Digitizer"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 0
+      },
+      "data": { },
+      "name": "wcphlex_frame_sink",
+      "type": "FrameBoundarySink"
+   },
+   {
+      "data": {
+         "edges": [
+            {
+               "head": {
+                  "node": "DepoSetDrifter:deposet_drifter_anode200",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoSetBoundarySource:wcphlex_deposet_source",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "DepoTransform:transform_anode200",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoSetDrifter:deposet_drifter_anode200",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "Reframer:reframer_anode200",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoTransform:transform_anode200",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "AddNoise:addnoise_anode200",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "Reframer:reframer_anode200",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "Digitizer:digitizer_anode200",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "AddNoise:addnoise_anode200",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "FrameBoundarySink:wcphlex_frame_sink",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "Digitizer:digitizer_anode200",
+                  "port": 0
+               }
+            }
+         ]
+      },
+      "name": "wcphlex_pgrapher",
+      "type": "Pgrapher"
+   }
+]
