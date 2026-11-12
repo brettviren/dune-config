@@ -26,9 +26,10 @@ function(
     anode_index    = "0",
     service_prefix = "",
     variant        = "ideal",
+    geometry       = "file",      // "file" (wires file) or "phlex" (job-layer products)
 )
 
-local P = parts(detector, anode_index, service_prefix, variant);
+local P = parts(detector, anode_index, service_prefix, variant, geometry);
 
 // The "sim" input end (deposets -> frames) feeding the sigproc body: swapping
 // ends.inputs.sim for ends.inputs["frame-file"]/["daq-hdf"] yields the plain

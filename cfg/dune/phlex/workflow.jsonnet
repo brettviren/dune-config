@@ -16,6 +16,16 @@
 //   sim     : workflow(d, "sim-sigproc", in_kind="deposet-file", ...)
 //   frames  : workflow(d, "sigproc",     in_kind="frame-file",   ...)
 //   raw DAQ : workflow(d, "sigproc",     in_kind="daq-hdf",      ...)   [gated]
+//
+// Geometry from GDML instead of a WCT wires file: give gdml=<file> (a path or
+// a name on GDML_PATH).  The workflow then adds phlex-gdml's provider
+// (pgd_provider: GDML -> gdml::DocumentPtr at the job layer) and
+// wire-cell-phlex's wcph_gdml_geometry transforms (-> wire schema and drift
+// faces, job layer), gives the executor those two products as extra inputs
+// ("geometry" config; WCT is configured on its first call) and passes
+// geometry="phlex" to the WCT job, which then uses FacadeWireSchema /
+// FacadeDriftPlanes.  gdml_readout / gdml_grouping select the channel map and
+// anode grouping (wire_cell_phlex/GdmlWires.hpp).
 
 local sources = import "sources.jsonnet";
 local sinks   = import "sinks.jsonnet";
@@ -48,6 +58,9 @@ function(
     wct_log_sink  = "",
     wct_log_level = "",
     stage         = "",            // phlex job stage (required by Phlex >= 0.4); "" -> wct_job
+    gdml          = "",            // GDML file: geometry from GDML (see above); "" -> wires file
+    gdml_readout  = "crp",
+    gdml_grouping = "pair-tpc",
 )
 
 local src = sources[in_kind];
@@ -58,6 +71,28 @@ assert std.objectHas(executors, exkey)
 local ex = executors[exkey];
 
 local exec_inst = "wct";
+
+local use_gdml = gdml != "";
+
+// Job-layer geometry: provider + transforms, and the executor's extra inputs.
+local geo_sources = if use_gdml then {
+    gdml: { cpp: "pgd_provider", gdml: gdml, creator: "gdml", suffix: "gdml", layer: "job" },
+} else {};
+local geo_modules = if use_gdml then {
+    geometry: {
+        cpp: "wcph_gdml_geometry",
+        input: { creator: "gdml", layer: "job", suffix: "gdml" },
+        readout: gdml_readout,
+        grouping: gdml_grouping,
+    },
+} else {};
+local geo_exec = if use_gdml then {
+    geometry: {
+        key: "geometry",
+        wire_schema: { creator: "geometry", layer: "job", suffix: "wire_schema" },
+        drift_faces: { creator: "geometry", layer: "job", suffix: "drift_faces" },
+    },
+} else {};
 
 // Conditionally attach WCT logging knobs to the executor module.
 local with_log = {
@@ -75,7 +110,7 @@ local with_log = {
 
     sources: {
         source: src.make(in_file),
-    },
+    } + geo_sources,
 
     modules: {
         [exec_inst]: {
@@ -90,9 +125,9 @@ local with_log = {
                 detector:    detname,
                 anode_index: "%d" % anode_index,  // phlex TLAs are strings
                 variant:     variant,
-            },
-        } + with_log,
+            } + (if use_gdml then { geometry: "phlex" } else {}),
+        } + with_log + geo_exec,
 
         sink: snk.make(out_file, exec_inst),
-    },
+    } + geo_modules,
 }

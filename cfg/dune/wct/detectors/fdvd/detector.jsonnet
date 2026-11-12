@@ -60,9 +60,30 @@ local is_top(ident) = ident >= nanodes / 2;
 // Collection-plane X of each drift volume and the anode-cathode distance.
 // The current v6 wires file has the bottom W plane at -651.99 cm and the top
 // at +652.15 cm; dunereco keeps -651.90 cm for the bottom (0.9 mm off W).
-local bot_anode_x = -651.90 * wc.cm;
-local top_anode_x =  652.15 * wc.cm;
-local anode_cathode = 650.06 * wc.cm;
+//
+// Geometry versions (selected by variant): the wires file and the drift
+// planes.  "v6" is dunevd10kt_3view_30deg_v6_refactored (dune10kt-vd's).
+// "v8" is the GGD v8 full-10kt GDML (dunecore feature/bnayak_vd_full10kt_ggd):
+// its W planes are at -/+644.32 cm and its cathode faces at -/+3.05 cm.  The
+// v8 wires file, fdvd-v8-fromgeo-pairtpc.json.bz2, was written by
+// larwirecell's WireSchemaFileWriter from that GDML through LArSoft and is not
+// in wire-cell-data (topics/wcls-wires/envs/wcls/run/v8/data/).  A job run
+// with geometry "phlex" (dune/wct/job/parts.jsonnet) takes both from the GDML
+// instead and ignores these.
+local geometries = {
+    v6: {
+        wires: "dunevd10kt_3view_30deg_v6_refactored.json.bz2",
+        bot_anode_x: -651.90 * wc.cm,
+        top_anode_x:  652.15 * wc.cm,
+        anode_cathode: 650.06 * wc.cm,
+    },
+    v8: {
+        wires: "fdvd-v8-fromgeo-pairtpc.json.bz2",
+        bot_anode_x: -644.32 * wc.cm,
+        top_anode_x:  644.32 * wc.cm,
+        anode_cathode: (644.32 - 3.05) * wc.cm,
+    },
+};
 
 // Response plane: distance from the collection strips where the field
 // response paths start.  MUST match the field response file.
@@ -125,15 +146,15 @@ local bottom_noise(gain) =
 // ---------------------------------------------------------------------------
 // Per-anode entry builder
 // ---------------------------------------------------------------------------
-local make_anode(n, bde_gain) =
+local make_anode(n, bde_gain, geo) =
     local top = is_top(n);
     // +1: drift toward +X (top volume), -1: toward -X (bottom volume)
     local sign = if top then 1 else -1;
-    local anode_x = if top then top_anode_x else bot_anode_x;
+    local anode_x = if top then geo.top_anode_x else geo.bot_anode_x;
     local face = {
         anode:    anode_x,
         response: anode_x - sign * response_plane,
-        cathode:  anode_x - sign * anode_cathode,
+        cathode:  anode_x - sign * geo.anode_cathode,
     };
     {
         ident: n,
@@ -221,7 +242,7 @@ local make_anode(n, bde_gain) =
 // ---------------------------------------------------------------------------
 // Detector description for a given bottom (BDE) front-end gain.
 // ---------------------------------------------------------------------------
-local make_detector(bde_gain) = schema.make({
+local make_detector(bde_gain, geo=geometries.v6) = schema.make({
     name: "fdvd",
 
     daq: daq,
@@ -230,10 +251,10 @@ local make_detector(bde_gain) = schema.make({
 
     // See the WIRES FILE WARNING above.
     wires: {
-        filename: "dunevd10kt_3view_30deg_v6_refactored.json.bz2",
+        filename: geo.wires,
     },
 
-    anodes: [make_anode(n, bde_gain) for n in std.range(0, nanodes - 1)],
+    anodes: [make_anode(n, bde_gain, geo) for n in std.range(0, nanodes - 1)],
 
     sp_filters: import "sp-filters.jsonnet",
 
@@ -272,6 +293,8 @@ local make_detector(bde_gain) = schema.make({
 local variants = {
     ideal:  make_detector(std.get(params, "elec_gain", 14.0) * wc.mV / wc.fC),
     bde7d8: make_detector(7.8 * wc.mV / wc.fC),
+    // Ideal electronics, v8 GGD geometry (see geometries above).
+    v8:     make_detector(std.get(params, "elec_gain", 14.0) * wc.mV / wc.fC, geometries.v8),
 };
 
 local vname = variant.select(params);

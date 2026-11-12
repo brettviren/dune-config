@@ -5,7 +5,16 @@
 // what lets the job builders (sim/sigproc/sim-sigproc/splat) COMPOSE pnodes
 // instead of each re-declaring the same components.
 //
-//   parts(detector, anode_index, service_prefix, variant) -> { stage inodes... }
+//   parts(detector, anode_index, service_prefix, variant, geometry) -> { stage inodes... }
+//
+// geometry selects where the wires and drift planes come from:
+//   "file"  : det.wires.filename (WireSchemaFile) and each anode's "faces".
+//   "phlex" : Phlex job-layer products (e.g. made from GDML by the
+//             wcph_gdml_geometry transforms) given to WCT by the executor:
+//             FacadeWireSchema and FacadeDriftPlanes (wire-cell-phlex), with
+//             the drift planes computed from the geometry and the anode's
+//             response_plane.  The executor's module needs a "geometry"
+//             config (see dune/phlex/workflow.jsonnet).
 //
 // DEPENDENCY DECLARATION via `.uses`:
 //   Every inode that references another component (by wc.tn in its data, or by
@@ -25,7 +34,9 @@
 local wc   = import "wirecell.jsonnet";
 local dets = import "dune/wct/detectors.jsonnet";
 
-function(detector="pdhd", anode_index="0", service_prefix="", variant="ideal")
+function(detector="pdhd", anode_index="0", service_prefix="", variant="ideal", geometry="file")
+
+assert geometry == "file" || geometry == "phlex" : 'geometry must be "file" or "phlex", got "%s"' % geometry;
 
 local det = dets[detector]({ detname: detector, variant: variant });
 local ai  = std.parseInt(anode_index);
@@ -56,11 +67,31 @@ local rng = {
     data: { seed: 1 },   // fixed seed for reproducible noise
 };
 
-local wires = {
+local geo_phlex = geometry == "phlex";
+
+// With geometry "phlex" these two components are shared by every WCT island
+// of the job (no prefix, identical data): the first Main configures them.
+local wires = if geo_phlex then {
+    type: "FacadeWireSchema",
+    name: "geometry",
+    data: { key: "geometry" },
+} else {
     type: "WireSchemaFile",
     name: pfx + "wires_" + a.name,
     data: { filename: det.wires.filename },
 };
+
+local drift_planes = {
+    type: "FacadeDriftPlanes",
+    name: "geometry",
+    data: { key: "geometry", response_distance: response_plane, anode_offset: 0.0 },
+};
+
+// Anode/Drifter drift-plane parameters: inline "faces"/"xregions" from the
+// detector object, or the IDriftPlanes component.
+local anode_drift = if geo_phlex then { drift_planes: wc.tn(drift_planes) } else { faces: a.faces };
+local drifter_drift = if geo_phlex then { drift_planes: wc.tn(drift_planes) } else { xregions: a.faces };
+local drift_uses = if geo_phlex then [drift_planes] else [];
 
 local fr = {
     type: "FieldResponse",
@@ -96,9 +127,8 @@ local anode = {
         ident:       a.ident,
         nimpacts:    det.sim.nimpacts,
         wire_schema: wc.tn(wires),
-        faces:       a.faces,
-    },
-    uses: [wires],
+    } + anode_drift,
+    uses: [wires] + drift_uses,
 };
 
 // PIR short padding must exceed the full field-response duration; 2x the drift
@@ -133,9 +163,8 @@ local drifter_comp = {
         lifetime:    det.lar.lifetime,
         drift_speed: det.lar.drift_speed,
         fluctuate:   det.sim.fluctuate,
-        xregions:    a.faces,
-    },
-    uses: [rng],
+    } + drifter_drift,
+    uses: [rng] + drift_uses,
 };
 
 local noise_model = {

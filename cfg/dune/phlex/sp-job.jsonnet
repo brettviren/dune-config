@@ -35,6 +35,7 @@ function(
     nevents       = 1,
     wct_log_sink  = "",
     wct_log_level = "",
+    gdml          = "",   // GDML file: geometry from GDML instead of the wires file
 )
 
 assert std.objectHas(plan, sp_input)
@@ -54,4 +55,5 @@ workflow(
     nevents=nevents,
     wct_log_sink=wct_log_sink,
     wct_log_level=wct_log_level,
+    gdml=gdml,
 )

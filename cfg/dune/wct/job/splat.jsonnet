@@ -23,9 +23,10 @@ function(
     anode_index    = "0",
     service_prefix = "",
     variant        = "ideal",
+    geometry       = "file",      // "file" (wires file) or "phlex" (job-layer products)
 )
 
-local P = parts(detector, anode_index, service_prefix, variant);
+local P = parts(detector, anode_index, service_prefix, variant, geometry);
 
 local input  = ends.inputs["deposet-file"](P, sources[0]);
 local body   = ends.bodies.splat(P);
