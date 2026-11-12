@@ -69,3 +69,28 @@ builder cannot yet add.
 ([discussion](https://github.com/orgs/Framework-R-D/discussions/522)); use
 `phlexed` (adds `PHLEXED_PATH` + TLAs) or pre-compile with `wcsonnet`/`jsonnet`.
 See the top-level README.
+
+## Geometry from GDML (no WCT wires file)
+
+`gdml=<file>` makes the job read the detector's LArSoft-convention GDML once
+per job instead of a WCT wires file: phlex-gdml's `pgd_provider` makes the GDML
+a `job`-layer product, wire-cell-phlex's `wcph_gdml_geometry` turns it into the
+wire schema (LArSoft-compatible channels, `crp` readout, `pair-tpc` anodes)
+and the drift faces, and the WCT executor takes both as inputs beside its
+event data and configures WCT on its first call.  `anode_indices=[...]` runs
+several anodes (islands) in one job.
+
+```
+export GDML_PATH=<dunecore>/dunecore/Geometry/gdml   # where the GDML is
+phlexed -c dune/phlex/sp-job.jsonnet -A detname=fdvd -A variant=v8 -A sp_input=sim \
+    -A in_file=depos.npz -A out_file=signals.npz \
+    -A gdml=dunevd10kt_3view_30deg_v8_full10kt_ggd.gdml \
+    --tla-code anode_indices='[0,200]'
+```
+
+`PHLEX_PLUGIN_PATH` must include the phlex-gdml and wire-cell-phlex modules.
+For FD-VD v8 this gives frames identical to the same job run with larwirecell's
+v8 wires file (`variant=v8`, file mode) and the same Drifter regions, in about
+6 s and 0.6 GB per anode instead of 17 s and 4 GB.  In GDML mode the Drifter
+gets the drift regions of the whole detector (as larwirecell's
+`DriftPlanesSource` gives); in file mode only the anode's own faces.
