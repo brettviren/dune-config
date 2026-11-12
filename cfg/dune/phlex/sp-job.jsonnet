@@ -36,6 +36,7 @@ function(
     wct_log_sink  = "",
     wct_log_level = "",
     gdml          = "",   // GDML file: geometry from GDML instead of the wires file
+    anode_indices = [],   // several anodes in one job (see workflow.jsonnet)
 )
 
 assert std.objectHas(plan, sp_input)
@@ -56,4 +57,5 @@ workflow(
     wct_log_sink=wct_log_sink,
     wct_log_level=wct_log_level,
     gdml=gdml,
+    anode_indices=anode_indices,
 )

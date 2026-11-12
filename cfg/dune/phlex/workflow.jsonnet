@@ -61,6 +61,10 @@ function(
     gdml          = "",            // GDML file: geometry from GDML (see above); "" -> wires file
     gdml_readout  = "crp",
     gdml_grouping = "pair-tpc",
+    // Several anodes in one job: one executor island (module "wct<n>") and
+    // one sink ("sink<n>", writing out_file with "-a<n>" before ".npz") per
+    // anode, all reading the same source (and geometry).  [] -> anode_index.
+    anode_indices = [],
 )
 
 local src = sources[in_kind];
@@ -100,6 +104,26 @@ local with_log = {
     [if wct_log_level != "" then "wct_log_level"]: wct_log_level,
 };
 
+local executor(n) = {
+    cpp: ex.cpp,
+    wct_config: "dune/wct/job/" + wct_job + ".jsonnet",
+    wct_plugins: ex.wct_plugins,
+    inputs: [src.output],
+    // a transform's output creator/layer are fixed by Phlex (its module
+    // label and its input's layer); only the suffix is set
+    outputs: [{ suffix: snk.product }],
+    wct_tla: {
+        detector:    detname,
+        anode_index: "%d" % n,  // phlex TLAs are strings
+        variant:     variant,
+    } + (if use_gdml then { geometry: "phlex" } else {}),
+} + with_log + geo_exec;
+
+local per_anode_file(n) =
+    if std.endsWith(out_file, ".npz")
+    then std.substr(out_file, 0, std.length(out_file) - 4) + "-a%d.npz" % n
+    else out_file + "-a%d" % n;
+
 {
     stage: if stage == "" then wct_job else stage,
 
@@ -112,22 +136,11 @@ local with_log = {
         source: src.make(in_file),
     } + geo_sources,
 
-    modules: {
-        [exec_inst]: {
-            cpp: ex.cpp,
-            wct_config: "dune/wct/job/" + wct_job + ".jsonnet",
-            wct_plugins: ex.wct_plugins,
-            inputs: [src.output],
-            // a transform's output creator/layer are fixed by Phlex (its module
-            // label and its input's layer); only the suffix is set
-            outputs: [{ suffix: snk.product }],
-            wct_tla: {
-                detector:    detname,
-                anode_index: "%d" % anode_index,  // phlex TLAs are strings
-                variant:     variant,
-            } + (if use_gdml then { geometry: "phlex" } else {}),
-        } + with_log + geo_exec,
-
+    modules: (if std.length(anode_indices) == 0 then {
+        [exec_inst]: executor(anode_index),
         sink: snk.make(out_file, exec_inst),
-    } + geo_modules,
+    } else std.foldl(function(acc, n) acc + {
+        ["wct%d" % n]: executor(n),
+        ["sink%d" % n]: snk.make(per_anode_file(n), "wct%d" % n),
+    }, anode_indices, {})) + geo_modules,
 }
