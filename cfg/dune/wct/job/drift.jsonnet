@@ -25,6 +25,7 @@ function(
     service_prefix = "",
     variant        = "ideal",
     geometry       = "file",
+    app_type       = "Pgrapher",   // WCT graph engine (the executor's wct_app)
 )
 
 local P = parts(detector, anode_index, service_prefix, variant, geometry);
@@ -34,4 +35,4 @@ local graph = g.pipeline(
     + ends.bodies.drift(P).pnodes
     + ends.outputs["deposet-file"](P, sinks[0]).pnodes);
 
-g.application(graph, name=app_name)
+g.application(graph, name=app_name, type=app_type)

@@ -134,9 +134,20 @@ local cfg_mu = multi(detector="fdvd", variant="v8", anode_indices="83, 87,281", 
 local one(cfg, t) = [c for c in cfg if c.type == t][0];
 assert one(cfg_mu, "DepoSetFanout").data.multiplicity == 3 : "fanout to every anode";
 assert one(cfg_mu, "FrameFanin").data.multiplicity == 3 : "fanin from every anode";
-assert std.length(one(cfg_mu, "FrameFanin").data.tag_rules) == 3 : "a tag rule per port";
-assert one(cfg_mu, "FrameFanin").data.tag_rules[2].trace == { gauss: "gauss", wiener: "wiener" }
-       : "SP tags merge under their own names";
+assert one(cfg_mu, "FrameFanin").data.tag_rules[2].trace == { gauss281: "gauss281", wiener281: "wiener281" }
+       : "fanin carries the per-anode tags";
+local retags = { [c.name]: c.data.tag_rules[0] for c in cfg_mu if c.type == "Retagger" };
+assert retags.retag_anode87.trace == { gauss: "gauss87", wiener: "wiener87" } : "branch renames its SP tags";
+assert retags.multi_merge.merge == { "gauss\\d+": "gauss", "wiener\\d+": "wiener" } : "merged back after the fanin";
+// More anodes than one fan node may have: a tree of fans, none over 10 ports.
+local cfg_25 = multi(detector="fdvd", variant="v8", anode_indices=std.range(0, 24), app_type="TbbFlow");
+local fans(cfg, t) = [c.data.multiplicity for c in cfg if c.type == t];
+assert std.length(fans(cfg_25, "DepoSetFanout")) > 1 && std.all([m <= 10 for m in fans(cfg_25, "DepoSetFanout")])
+       && std.length(fans(cfg_25, "FrameFanin")) > 1 && std.all([m <= 10 for m in fans(cfg_25, "FrameFanin")])
+       : "multifan trees";
+assert count(cfg_25, "TbbFlow") == 1 && count(cfg_25, "Pgrapher") == 0 : "app_type selects the engine";
+local inner = [c for c in cfg_25 if c.type == "FrameFanin" && c.name == "multi_fanin"][0];
+assert std.length(std.objectFields(inner.data.tag_rules[0].trace)) > 2 : "inner fanin carries its subtree's tags";
 assert count(cfg_mu, "DepoSetFilter") == 3 && count(cfg_mu, "OmnibusSigProc") == 3
        && count(cfg_mu, "DeposOrBust") == 3 && count(cfg_mu, "Drifter") == 0
        : "one drifted hydra branch per anode";
@@ -149,7 +160,9 @@ local comps(cfg) = std.set([c.type + ":" + c.name for c in cfg
                             if !std.member(["Pgrapher", "DepoSetBoundarySource", "FrameBoundarySink"], c.type)]);
 local comps_mu = comps(cfg_mu);
 assert std.setUnion(std.setUnion(comps(isl("83")), comps(isl("87"))), comps(isl("281")))
-       == std.setDiff(comps_mu, std.set(["DepoSetFanout:multi_fanout", "FrameFanin:multi_fanin"]))
+       == std.set([c for c in comps_mu if !std.member(["DepoSetFanout:multi_fanout", "FrameFanin:multi_fanin",
+                                                     "Retagger:multi_merge"], c)
+                 && !std.startsWith(c, "Retagger:retag_")])
        : "branches are the islands' components";
 local by_tn(cfg) = { [c.type + ":" + c.name]: c.data for c in cfg };
 assert by_tn(cfg_mu)["OmnibusSigProc:sigproc_anode281"] == by_tn(isl("281"))["OmnibusSigProc:sigproc_anode281"]

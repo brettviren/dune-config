@@ -40,6 +40,7 @@ function(
     drift         = "island",  // "job": drift once for all islands (sim only)
     hydra         = false,     // with drift "job": skip anodes without depos
     combine       = false,     // with drift "job": all anodes in one WCT graph
+    wct_app       = "Pgrapher",  // or "TbbFlow": WCT graph engine
 )
 
 assert std.objectHas(plan, sp_input)
@@ -64,4 +65,5 @@ workflow(
     drift=drift,
     hydra=hydra,
     combine=combine,
+    wct_app=wct_app,
 )

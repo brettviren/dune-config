@@ -37,6 +37,7 @@ function(
     geometry       = "file",      // "file" (wires file) or "phlex" (job-layer products)
     drifted        = "no",
     hydra          = "no",
+    app_type       = "Pgrapher",   // WCT graph engine (the executor's wct_app)
 )
 
 local yes(x) = x == true || x == "yes" || x == "true";
@@ -60,4 +61,4 @@ else work.pnodes;
 
 local graph = g.pipeline(input.pnodes + middle + output.pnodes);
 
-g.application(graph, name=app_name)
+g.application(graph, name=app_name, type=app_type)

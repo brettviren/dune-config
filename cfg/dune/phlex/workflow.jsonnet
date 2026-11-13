@@ -85,6 +85,9 @@ function(
     // one sink "sink" writing out_file, instead of one island and one sink
     // per anode.  The drift module stays separate.
     combine       = false,
+    // WCT graph engine of every executor module: "Pgrapher" (serial within
+    // one call) or "TbbFlow" (the graph's nodes run as TBB tasks).
+    wct_app       = "Pgrapher",
 )
 
 local src = sources[in_kind];
@@ -125,8 +128,15 @@ local geo_exec = if use_gdml then {
     },
 } else {};
 
-// Conditionally attach WCT logging knobs to the executor module.
-local with_log = {
+assert wct_app == "Pgrapher" || wct_app == "TbbFlow" : 'wct_app must be "Pgrapher" or "TbbFlow"';
+local tbb = wct_app == "TbbFlow";
+// The WCT job builds its graph for the engine the executor runs (app_type).
+local app_tla = if tbb then { app_type: wct_app } else {};
+local plugins(ps) = ps + (if tbb then ["WireCellTbb"] else []);
+
+// Conditionally attach WCT logging knobs (and the graph engine) to the
+// executor module.
+local with_log = (if tbb then { wct_app: wct_app } else {}) + {
     [if wct_log_sink  != "" then "wct_log_sink"]:  wct_log_sink,
     [if wct_log_level != "" then "wct_log_level"]: wct_log_level,
 };
@@ -137,14 +147,14 @@ local drift_modules = if drift_job then {
     [drift_label]: {
         cpp: executors.deposet_to_deposet.cpp,
         wct_config: "dune/wct/job/drift.jsonnet",
-        wct_plugins: executors.deposet_to_deposet.wct_plugins,
+        wct_plugins: plugins(executors.deposet_to_deposet.wct_plugins),
         inputs: [src.output],
         outputs: [{ suffix: "deposet" }],
         wct_tla: {
             detector: detname,
             anode_index: "%d" % anode_index,
             variant: variant,
-        } + (if use_gdml then { geometry: "phlex" } else {}),
+        } + (if use_gdml then { geometry: "phlex" } else {}) + app_tla,
     } + with_log + geo_exec,
 } else {};
 local island_input = if drift_job
@@ -154,7 +164,7 @@ local island_input = if drift_job
 local executor(n) = {
     cpp: ex.cpp,
     wct_config: "dune/wct/job/" + wct_job + ".jsonnet",
-    wct_plugins: ex.wct_plugins,
+    wct_plugins: plugins(ex.wct_plugins),
     inputs: [island_input],
     // a transform's output creator/layer are fixed by Phlex (its module
     // label and its input's layer); only the suffix is set
@@ -164,14 +174,15 @@ local executor(n) = {
         anode_index: "%d" % n,  // phlex TLAs are strings
         variant:     variant,
     } + (if use_gdml then { geometry: "phlex" } else {})
-      + (if drift_job then { drifted: "yes", hydra: if hydra then "yes" else "no" } else {}),
+      + (if drift_job then { drifted: "yes", hydra: if hydra then "yes" else "no" } else {})
+      + app_tla,
 } + with_log + geo_exec;
 
 // All anodes in one WCT graph (combine).
 local combined_executor = {
     cpp: ex.cpp,
     wct_config: "dune/wct/job/multi-sim-sigproc.jsonnet",
-    wct_plugins: ex.wct_plugins,
+    wct_plugins: plugins(ex.wct_plugins),
     inputs: [island_input],
     outputs: [{ suffix: snk.product }],
     wct_tla: {
@@ -179,7 +190,7 @@ local combined_executor = {
         anode_indices: std.join(",", ["%d" % n for n in anode_indices]),
         variant:       variant,
         hydra:         if hydra then "yes" else "no",
-    } + (if use_gdml then { geometry: "phlex" } else {}),
+    } + (if use_gdml then { geometry: "phlex" } else {}) + app_tla,
 } + with_log + geo_exec;
 
 // Signal processing output carries "gauss" and "wiener" traces; write them

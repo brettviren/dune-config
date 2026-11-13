@@ -128,7 +128,7 @@ anodes, hydra) on the same events.  The memory is mostly the 320 AnodePlanes
 (~11 MB each).  The lit anodes and their charge agree with the art job (see
 topics/wcls-wires/envs/wcls/run/v8/compare-phlex.py in the xero area).
 
-### All anodes in one WCT graph (`combine`)
+### All anodes in one WCT graph (`combine`), Pgrapher or TbbFlow
 
 `combine=true` (with `drift="job"` and `anode_indices`) replaces the
 per-anode islands and sinks by ONE executor module `wct` running
@@ -136,17 +136,34 @@ per-anode islands and sinks by ONE executor module `wct` running
 `out_file`; the `drift` module stays separate.  The WCT graph is
 
 ```
-DepoSetBoundarySource -> DepoSetFanout(N)
-  -> per anode: DepoSetFilter -> [DeposOrBust ->] sim -> OmnibusSigProc [-> FrameSync]
--> FrameFanin(N) -> FrameBoundarySink
+DepoSetBoundarySource -> multifan DepoSetFanout(N)
+  -> per anode k: DepoSetFilter -> [DeposOrBust ->] sim -> OmnibusSigProc [-> FrameSync]
+                  -> Retagger (gauss -> gauss<k>, wiener -> wiener<k>)
+-> multifan FrameFanin(N) -> Retagger (merge gauss\d+ -> gauss, wiener\d+ -> wiener)
+-> FrameBoundarySink
 ```
 
-Each branch has the components (names, configs, seeds) of the drifted hydra
-island of its anode, and services are shared as between islands.
-`FrameFanin` merges every anode's `gauss` (`wiener`) traces under one
-`gauss` (`wiener`) tag and takes the frame time from an anode with traces
-(both need WCT's FrameFanin fixes of 2026-11-13).  On the 16 lit anodes of
-the 2 v8 muon events the merged frame equals the 16 islands' frames
-channel for channel.  The graph runs under Pgrapher, so one event's anodes
-run one after another: 78 s and 1.2 GB for 16 anodes, against 13 s and
-4.9 GB for 16 islands.
+The fans are `multifan.jsonnet` trees (no node over 10 ports, as TbbFlow
+needs); every FrameFanin of the tree carries forward the per-anode tags of
+its subtree.  Each branch has the components (names, configs, seeds) of the
+drifted hydra island of its anode, and services are shared as between
+islands.  FrameFanin takes the frame time from an input with traces (WCT
+FrameFanin fix of 2026-11-13; an empty hydra frame has time 0).  On the 16
+lit anodes of the 2 v8 muon events the merged frame equals the 16 islands'
+frames channel for channel, with either engine and with 16 or 320 anodes.
+
+`wct_app="TbbFlow"` runs every executor's WCT graph (drift, islands or the
+combined graph) under TbbFlow instead of Pgrapher (adds the WireCellTbb
+plugin and passes `app_type` to the WCT job).  FD-VD v8, 2 events, hydra,
+one run each on a 64-core host (`phlexed -j 64`):
+
+| anodes | layout   | engine   | wall  | peak RSS | CPU    |
+|--------|----------|----------|-------|----------|--------|
+| 16     | islands  | Pgrapher |  9.5 s | 4.6 GB  |  96 s  |
+| 16     | islands  | TbbFlow  | 15.1 s | 3.7 GB  |  89 s  |
+| 16     | combined | Pgrapher | 78.9 s | 1.0 GB  |  78 s  |
+| 16     | combined | TbbFlow  | 15.0 s | 3.5 GB  |  87 s  |
+| 320    | islands  | Pgrapher | 23.8 s | 3.9 GB  | 111 s  |
+| 320    | islands  | TbbFlow  | 33.7 s | 3.4 GB  | 120 s  |
+| 320    | combined | Pgrapher | 88.8 s | 2.1 GB  |  92 s  |
+| 320    | combined | TbbFlow  | 23.5 s | 4.3 GB  | 105 s  |

@@ -98,5 +98,15 @@ assert cj.modules.wct.wct_tla.anode_indices == "3,200" && cj.modules.wct.wct_tla
 assert cj.modules.wct.inputs == [{ creator: "drift", layer: "event", suffix: "deposet" }]
        : "combined graph reads the drifted depos";
 assert cj.modules.sink.wct_tla == { outname: "sig.npz", tags: "gauss,wiener" } : "one output file";
+assert !std.objectHas(cj.modules.wct, "wct_app") && !std.objectHas(cj.modules.wct.wct_tla, "app_type")
+       : "Pgrapher by default";
+local tj = workflow(
+    detname="fdvd", wct_job="sim-sigproc", variant="v8", anode_indices=[3, 200],
+    drift="job", combine=true, wct_app="TbbFlow",
+);
+assert tj.modules.wct.wct_app == "TbbFlow" && tj.modules.wct.wct_tla.app_type == "TbbFlow"
+       && std.member(tj.modules.wct.wct_plugins, "WireCellTbb")
+       && tj.modules.drift.wct_app == "TbbFlow" && tj.modules.drift.wct_tla.app_type == "TbbFlow"
+       : "TbbFlow engine for every executor";
 
 { ok: true }
