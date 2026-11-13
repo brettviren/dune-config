@@ -76,7 +76,7 @@ See the top-level README.
 per job instead of a WCT wires file: phlex-gdml's `pgd_provider` makes the GDML
 a `job`-layer product, wire-cell-phlex's `wcph_gdml_geometry` turns it into the
 wire schema (LArSoft-compatible channels, `crp` readout, `pair-tpc` anodes)
-and the drift faces, and the WCT executor takes both as inputs beside its
+and the drift planes, and the WCT executor takes both as inputs beside its
 event data and configures WCT on its first call.  `anode_indices=[...]` runs
 several anodes (islands) in one job.
 

@@ -124,7 +124,7 @@ local geo_exec = if use_gdml then {
     geometry: {
         key: "geometry",
         wire_schema: { creator: "geometry", layer: "job", suffix: "wire_schema" },
-        drift_faces: { creator: "geometry", layer: "job", suffix: "drift_faces" },
+        drift_planes: { creator: "geometry", layer: "job", suffix: "drift_planes" },
     },
 } else {};
 
