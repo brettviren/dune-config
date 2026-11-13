@@ -85,4 +85,18 @@ assert dj.modules.sink3.wct_tla.tags == "gauss,wiener" : "SP output written per 
 assert !std.objectHas(sim_sp.modules, "drift") && !std.objectHas(sim_sp.modules.wct.wct_tla, "drifted")
        : "default: islands drift themselves";
 
+// --- all anodes in one WCT graph ----------------------------------------------
+local cj = workflow(
+    detname="fdvd", wct_job="sim-sigproc", variant="v8",
+    in_file="depos.npz", out_file="sig.npz",
+    anode_indices=[3, 200], drift="job", hydra=true, combine=true,
+);
+assert std.objectFields(cj.modules) == ["drift", "sink", "wct"] : "drift, one executor, one sink";
+assert cj.modules.wct.wct_config == "dune/wct/job/multi-sim-sigproc.jsonnet" : "combined WCT job";
+assert cj.modules.wct.wct_tla.anode_indices == "3,200" && cj.modules.wct.wct_tla.hydra == "yes"
+       : "anodes and hydra passed as TLA strings";
+assert cj.modules.wct.inputs == [{ creator: "drift", layer: "event", suffix: "deposet" }]
+       : "combined graph reads the drifted depos";
+assert cj.modules.sink.wct_tla == { outname: "sig.npz", tags: "gauss,wiener" } : "one output file";
+
 { ok: true }

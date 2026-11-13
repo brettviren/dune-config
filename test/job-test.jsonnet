@@ -128,4 +128,32 @@ assert count(cfg_hy, "Drifter") == 0 : "a drifted island does not drift";
 assert [c.data.frame_ident for c in cfg_hy if c.type == "DepoTransform"] == ["deposet"]
        : "frames name their event";
 
+// --- several anodes in one WCT graph (multi-sim-sigproc) ---------------------
+local multi = import "dune/wct/job/multi-sim-sigproc.jsonnet";
+local cfg_mu = multi(detector="fdvd", variant="v8", anode_indices="83, 87,281", hydra="yes");
+local one(cfg, t) = [c for c in cfg if c.type == t][0];
+assert one(cfg_mu, "DepoSetFanout").data.multiplicity == 3 : "fanout to every anode";
+assert one(cfg_mu, "FrameFanin").data.multiplicity == 3 : "fanin from every anode";
+assert std.length(one(cfg_mu, "FrameFanin").data.tag_rules) == 3 : "a tag rule per port";
+assert one(cfg_mu, "FrameFanin").data.tag_rules[2].trace == { gauss: "gauss", wiener: "wiener" }
+       : "SP tags merge under their own names";
+assert count(cfg_mu, "DepoSetFilter") == 3 && count(cfg_mu, "OmnibusSigProc") == 3
+       && count(cfg_mu, "DeposOrBust") == 3 && count(cfg_mu, "Drifter") == 0
+       : "one drifted hydra branch per anode";
+assert count(cfg_mu, "FieldResponse") == 1 && count(cfg_mu, "FftwDFT") == 1
+       : "services shared across branches";
+assert count(cfg_mu, "Random") == 3 : "RNG per branch";
+// Each branch is the drifted hydra island of its anode, component for component.
+local isl(i) = sim_sigproc(detector="fdvd", anode_index=i, variant="v8", drifted="yes", hydra="yes");
+local comps(cfg) = std.set([c.type + ":" + c.name for c in cfg
+                            if !std.member(["Pgrapher", "DepoSetBoundarySource", "FrameBoundarySink"], c.type)]);
+local comps_mu = comps(cfg_mu);
+assert std.setUnion(std.setUnion(comps(isl("83")), comps(isl("87"))), comps(isl("281")))
+       == std.setDiff(comps_mu, std.set(["DepoSetFanout:multi_fanout", "FrameFanin:multi_fanin"]))
+       : "branches are the islands' components";
+local by_tn(cfg) = { [c.type + ":" + c.name]: c.data for c in cfg };
+assert by_tn(cfg_mu)["OmnibusSigProc:sigproc_anode281"] == by_tn(isl("281"))["OmnibusSigProc:sigproc_anode281"]
+       && by_tn(cfg_mu)["Random:rng_anode87"] == by_tn(isl("87"))["Random:rng_anode87"]
+       : "branch configs equal the island configs";
+
 { ok: true }

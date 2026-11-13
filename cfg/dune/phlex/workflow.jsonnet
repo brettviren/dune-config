@@ -79,6 +79,12 @@ function(
     // With drift "job": an island whose anode has no depos skips sim and
     // sigproc and gives an empty frame (WCT hydra: DeposOrBust + FrameSync).
     hydra         = false,
+    // With drift "job" and several anode_indices: run all the anodes in ONE
+    // WCT graph (dune/wct/job/multi-sim-sigproc.jsonnet: fanout -> per-anode
+    // sim+sigproc branches -> FrameFanin) in one executor module "wct" with
+    // one sink "sink" writing out_file, instead of one island and one sink
+    // per anode.  The drift module stays separate.
+    combine       = false,
 )
 
 local src = sources[in_kind];
@@ -94,6 +100,8 @@ assert drift == "island" || drift == "job" : 'drift must be "island" or "job", g
 local drift_job = drift == "job";
 assert !drift_job || wct_job == "sim-sigproc" : 'drift "job" needs wct_job "sim-sigproc"';
 assert !hydra || drift_job : 'hydra needs drift "job"';
+assert !combine || (drift_job && std.length(anode_indices) > 0)
+       : 'combine needs drift "job" and anode_indices';
 
 local use_gdml = gdml != "";
 
@@ -159,6 +167,21 @@ local executor(n) = {
       + (if drift_job then { drifted: "yes", hydra: if hydra then "yes" else "no" } else {}),
 } + with_log + geo_exec;
 
+// All anodes in one WCT graph (combine).
+local combined_executor = {
+    cpp: ex.cpp,
+    wct_config: "dune/wct/job/multi-sim-sigproc.jsonnet",
+    wct_plugins: ex.wct_plugins,
+    inputs: [island_input],
+    outputs: [{ suffix: snk.product }],
+    wct_tla: {
+        detector:      detname,
+        anode_indices: std.join(",", ["%d" % n for n in anode_indices]),
+        variant:       variant,
+        hydra:         if hydra then "yes" else "no",
+    } + (if use_gdml then { geometry: "phlex" } else {}),
+} + with_log + geo_exec;
+
 // Signal processing output carries "gauss" and "wiener" traces; write them
 // as separate arrays (the frame sink's "*" would sum them per channel).
 local sink_tags = if out_kind == "frame-file" && std.member(["sigproc", "sim-sigproc"], wct_job)
@@ -181,7 +204,10 @@ local per_anode_file(n) =
         source: src.make(in_file),
     } + geo_sources,
 
-    modules: (if std.length(anode_indices) == 0 then {
+    modules: (if combine then {
+        [exec_inst]: combined_executor,
+        sink: snk.make(out_file, exec_inst, sink_tags),
+    } else if std.length(anode_indices) == 0 then {
         [exec_inst]: executor(anode_index),
         sink: snk.make(out_file, exec_inst, sink_tags),
     } else std.foldl(function(acc, n) acc + {

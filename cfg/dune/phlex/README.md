@@ -127,3 +127,26 @@ FD-VD v8, 2 G4 muon events (the art multi-sim's): 320 islands in 24 s and
 anodes, hydra) on the same events.  The memory is mostly the 320 AnodePlanes
 (~11 MB each).  The lit anodes and their charge agree with the art job (see
 topics/wcls-wires/envs/wcls/run/v8/compare-phlex.py in the xero area).
+
+### All anodes in one WCT graph (`combine`)
+
+`combine=true` (with `drift="job"` and `anode_indices`) replaces the
+per-anode islands and sinks by ONE executor module `wct` running
+`dune/wct/job/multi-sim-sigproc.jsonnet` and one sink `sink` writing
+`out_file`; the `drift` module stays separate.  The WCT graph is
+
+```
+DepoSetBoundarySource -> DepoSetFanout(N)
+  -> per anode: DepoSetFilter -> [DeposOrBust ->] sim -> OmnibusSigProc [-> FrameSync]
+-> FrameFanin(N) -> FrameBoundarySink
+```
+
+Each branch has the components (names, configs, seeds) of the drifted hydra
+island of its anode, and services are shared as between islands.
+`FrameFanin` merges every anode's `gauss` (`wiener`) traces under one
+`gauss` (`wiener`) tag and takes the frame time from an anode with traces
+(both need WCT's FrameFanin fixes of 2026-11-13).  On the 16 lit anodes of
+the 2 v8 muon events the merged frame equals the 16 islands' frames
+channel for channel.  The graph runs under Pgrapher, so one event's anodes
+run one after another: 78 s and 1.2 GB for 16 anodes, against 13 s and
+4.9 GB for 16 islands.
