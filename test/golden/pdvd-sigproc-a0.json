@@ -19,14 +19,14 @@
       "data": {
          "faces": [
             {
-               "anode": -3472.6500000000001,
-               "cathode": -25.400000000000091,
-               "response": -3291.6500000000001
+               "anode": -3399.0999999999999,
+               "cathode": -30,
+               "response": -3234.5
             },
             {
-               "anode": -3472.6500000000001,
-               "cathode": -25.400000000000091,
-               "response": -3291.6500000000001
+               "anode": -3399.0999999999999,
+               "cathode": -30,
+               "response": -3234.5
             }
          ],
          "ident": 0,
@@ -191,7 +191,7 @@
       "data": {
          "ADC_mV": 11702142857.142859,
          "anode": "AnodePlane:anode0",
-         "ctoffset": 4000,
+         "ctoffset": 4577.825699186651,
          "dft": "FftwDFT:dft-22e67cc3ae",
          "elecresponse": "ColdElecResponse:elec-e4d64e478f",
          "fft_flag": 0,

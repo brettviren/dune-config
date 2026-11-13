@@ -96,29 +96,15 @@ the drift planes is per detector, `drift_planes` in
 `dune/wct/detectors/<det>/detector.jsonnet` (FacadeDriftPlanes):
 
 - pdhd: anode cut 9.52 mm from the collection plane (the first induction
-  plane, as the file-mode faces), and `short_drift: "mirror"`: the GDML's
-  outer (wall side) TPCs are ~2.5 cm, less than the 10 cm response distance,
-  so they get their APA's inner drift length (both faces active, as the
-  file-mode faces).  Faces agree with file mode to ~2 mm.
-- pdvd: anode cut at the collection plane and the response plane 18.1 cm from
-  it (the field response's).  The file-mode faces put the response plane
-  123.9 mm from the collection plane; GDML-mode signals come ~78 ticks
-  earlier than file mode's (2 track events, all 8 anodes), the charge agrees
-  within 1 %.
-
-```
-export GDML_PATH=<dunecore>/dunecore/Geometry/gdml   # where the GDML is
-phlexed -c dune/phlex/sp-job.jsonnet -A detname=fdvd -A variant=v8 -A sp_input=sim \
-    -A in_file=depos.npz -A out_file=signals.npz -A gdml=default \
-    --tla-code anode_indices='[0,200]'
-```
-
-`PHLEX_PLUGIN_PATH` must include the phlex-gdml and wire-cell-phlex modules.
-For FD-VD v8 this gives frames identical to the same job run with larwirecell's
-v8 wires file (`variant=v8`, file mode) and the same Drifter regions, in about
-6 s and 0.6 GB per anode instead of 17 s and 4 GB.  In GDML mode the Drifter
-gets the drift regions of the whole detector (as larwirecell's
-`DriftPlanesSource` gives); in file mode only the anode's own faces.
+  plane, as the file-mode faces).  The GDML's outer (cryostat wall side)
+  TPCs are ~2.5 cm deep; a face whose drift is under 10 % of the detector's
+  longest (wcph_gdml_geometry `min_drift_fraction`) is insensitive and
+  FacadeDriftPlanes gives a null face for it, as the old Jsonnet faces lists
+  did, and no xregion.  (The file-mode PDHD faces keep both faces active.)
+- pdvd: per X. Ning's review of the PDVD config (one-sided CRP): anode cut at
+  the CRP shield plane 16.4 mm from W, response plane 18.1 cm from W (the
+  field response origin), cathode at |x| = 3 cm; the file-mode faces are the
+  same planes.  MC `ctoffset` = 18.1 cm/v - 18.1 cm/(1.53 mm/us).
 
 ## Whole detector: shared services, one drift, hydra
 

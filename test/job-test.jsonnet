@@ -172,10 +172,21 @@ assert by_tn(cfg_mu)["OmnibusSigProc:sigproc_anode281"] == by_tn(isl("281"))["Om
 // --- drift planes from geometry: per-detector settings ------------------------
 local dp(det) = [c.data for c in sim_sigproc(detector=det, anode_index="0", geometry="phlex")
                  if c.type == "FacadeDriftPlanes"][0];
-assert dp("pdhd").short_drift == "mirror" && std.abs(dp("pdhd").anode_offset - 9.52) < 0.01
-       : "pdhd: anode cut at the first induction plane, outer faces mirrored";
-assert dp("pdvd").short_drift == "error" && dp("pdvd").anode_offset == 0 && dp("pdvd").response_distance == 181
-       : "pdvd: anode at the collection plane, response 18.1 cm";
-assert dp("fdvd").short_drift == "error" && dp("fdvd").anode_offset == 0 : "fdvd unchanged";
+assert std.abs(dp("pdhd").anode_offset - 9.52) < 0.01 && !std.objectHas(dp("pdhd"), "short_drift")
+       : "pdhd: anode cut at the first induction plane";
+assert std.abs(dp("pdvd").anode_offset - 16.4) < 1e-9 && dp("pdvd").response_distance == 181
+       : "pdvd: anode cut at the CRP shield plane, response 18.1 cm from W";
+assert dp("fdvd").anode_offset == 0 : "fdvd unchanged";
+
+// --- PDVD CRP geometry (X. Ning's review) ---------------------------------------
+local pdvd = (import "dune/wct/detectors.jsonnet").pdvd({ detname: "pdvd" });
+local f0 = pdvd.anodes[0].faces[0];
+local f4 = pdvd.anodes[4].faces[0];
+assert std.abs(f0.anode + 3399.1) < 1e-6 && std.abs(f0.response + 3234.5) < 1e-6 && std.abs(f0.cathode + 30) < 1e-6
+       : "pdvd bottom face: anode cut 339.91 cm, response 323.45 cm, cathode 3 cm";
+assert std.abs(f4.anode - 3399.1) < 1e-6 && std.abs(f4.response - 3234.5) < 1e-6 && std.abs(f4.cathode - 30) < 1e-6
+       : "pdvd top face mirrors the bottom";
+assert std.abs(pdvd.anodes[0].sigproc.ctoffset - (181 / 1.473 - 181 / 1.53) * 1000) < 1e-6
+       : "pdvd MC ctoffset from the drift and field-response speeds (ns)";
 
 { ok: true }

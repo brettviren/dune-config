@@ -225,12 +225,10 @@ local base = schema.make({
 
     // Drift planes from geometry (GDML via Phlex): the same anode cut as the
     // faces above (first induction plane, apa_plane - apa_w2w/2 = 9.52 mm
-    // from the collection plane), and both faces of an APA active with the
-    // same drift length: the GDML's outer (wall side) TPCs are only ~2.5 cm,
-    // less than the 10 cm response distance.
+    // from the collection plane).  The GDML's outer (cryostat wall side)
+    // TPCs are ~2.5 cm deep, so their faces come out insensitive (null).
     drift_planes: {
         anode_offset: apa_plane - 0.5 * apa_w2w,
-        short_drift: "mirror",
     },
 
     // 4 APAs: apa0 .. apa3

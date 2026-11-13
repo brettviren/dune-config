@@ -107,7 +107,6 @@ local drift_planes = {
         key: "geometry",
         response_distance: response_plane,
         anode_offset: std.get(det, "drift_planes", {}).anode_offset,
-        short_drift: std.get(det, "drift_planes", {}).short_drift,
     },
 };
 

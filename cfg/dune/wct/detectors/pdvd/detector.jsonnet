@@ -32,23 +32,33 @@ function(params={detname: "pdvd"})
 // ---------------------------------------------------------------------------
 // Geometry constants
 // ---------------------------------------------------------------------------
-// Between center lines (APA-CPA distance for vertical drift)
+// CRP geometry per X. Ning's review of the PDVD Wire-Cell config (dunereco
+// fix/pdvd-crp-drift-planes, "NP02 bias study"; xero
+// topics/wcls-wires/work/notes-from-pdvd-fix/DUNERECO_DRIFT_PLANE_FIX.md).
+// A CRP is one-sided: apa_cpa is the x of the W (collection) strips, not an
+// APA center line, so no APA half-width enters (the old 0.5*apa_w2w put the
+// response plane 4.29 cm too far from W: hits 4.29 cm too close to the anode).
+
+// |x| of the W strips (the cathode is at x = 0).
 local apa_cpa   = 341.55 * wc.cm;
-local cpa_thick = 50.8   * wc.mm;
-local apa_w2w   = 85.725 * wc.mm;
-local plane_gap = 4.76   * wc.mm;
-local apa_g2g   = 114.3  * wc.mm;  // slightly different from apa_w2w + 6*plane_gap due to rounding
+// Cathode block thickness in the PDVD GDML.
+local cpa_thick = 60.0   * wc.mm;
 
-// Anode cut-off: at the grid wires (outermost plane)
-local apa_plane = 0.5 * apa_g2g;
+// Anode cut-off: the CRP shield plane, where the active LAr ends, 16.4 mm
+// from W toward the cathode (W -3.2 mm- V -10 mm- U -3.2 mm- shield).
+local apa_plane = 16.4 * wc.mm;
 
-// Response plane: distance from collection wires where Garfield calculations start.
-// PDVD uses 18.1 cm (larger than PDHD's 10 cm due to different detector geometry).
-// MUST match the field response files used.
+// Response plane: distance from the W strips where the field response starts
+// (its "origin", 181 mm in protodunevd_FR_norminal_260324).
 local response_plane = 18.1 * wc.cm;
 
-// Cathode cut-off
-local cpa_plane = apa_cpa - 0.5 * cpa_thick;
+// The field response's drift speed ("speed", 1.53 mm/us in the same file);
+// the MC ctoffset below corrects for the simulated speed differing from it.
+local fr_speed = 1.53 * wc.mm / wc.us;
+local drift_speed = 1.473 * wc.mm / wc.us;  // data-driven PDVD value (lar below)
+
+// Cathode cut-off: |x| of the cathode surface.
+local cpa_plane = 0.5 * cpa_thick;
 
 // ---------------------------------------------------------------------------
 // Per-anode entry builder
@@ -62,23 +72,19 @@ local make_anode(a) =
         ident: a,
         name: "anode%d" % a,
 
-        // Both faces active (sim-mode geometry).
-        // PDVD faces are symmetric: both faces of an anode have the same geometry.
+        // Both faces active, the same: the two faces of a WCT anode are the
+        // two halves (TPCs) of a CRU, in the same drift volume.
         //
         // Coordinate note: the PDVD wire file maps physical Y (vertical drift axis)
         // to WCT X.  Anodes 0-3 sit at negative X (bottom CRPs), anodes 4-7 at
-        // positive X (top CRPs), and the cathode is near X=0 (center).
+        // positive X (top CRPs), and the cathode is at X=0 (center).
         //
-        // For bottom anodes (sign=-1, anode at X ≈ -347 cm):
-        //   cathode = centerline - sign*cpa_plane ≈ -341.55 + 339.0 ≈ -2.5 cm  (center) ✓
-        //   response = anode - sign*response_plane ≈ -347 + 18.1 ≈ -329 cm     (inside drift) ✓
-        // For top anodes (sign=+1, anode at X ≈ +347 cm):
-        //   cathode ≈ +2.5 cm  (center) ✓
-        //   response ≈ +329 cm (inside drift) ✓
+        // |x| of the planes: anode cut-off 339.91 cm, response plane 323.45 cm,
+        // cathode 3.0 cm.
         local face = {
-            anode:    centerline + sign * apa_plane,
-            response: centerline + sign * (apa_plane - response_plane),
-            cathode:  centerline - sign * cpa_plane,
+            anode:    centerline - sign * apa_plane,
+            response: centerline - sign * response_plane,
+            cathode:  sign * cpa_plane,
         },
         faces: [ face, face ],
 
@@ -129,7 +135,11 @@ local make_anode(a) =
         },
 
         // OmnibusSigProc tuning.
-        // PDVD uses ctoffset=4us and multi-plane protection; otherwise similar to PDHD.
+        // ctoffset: simulation value (X. Ning's review): the field response
+        // assumes fr_speed from response_plane on, so the arrival time is off
+        // by response_plane/drift_speed - response_plane/fr_speed (+4.58 us at
+        // 1.473 mm/us).  Data keeps the tuned 4 us (no "real" variant yet).
+        // Multi-plane protection; otherwise similar to PDHD.
         //
         // troi_col_th_factor lowered 5.0 -> 2.5 (xerosere ddm-tv6): the PDVD CRP
         // collection electrode (strips on stacked PCBs with thru-hole "loop-back"
@@ -144,7 +154,7 @@ local make_anode(a) =
         // dunereco keeps 5.0 because it uses DNNROI, not this bare-OSP ROI finder.
         // PROVISIONAL pending FR/response review with the detector experts.
         sigproc: {
-            ctoffset:    4.0 * wc.us,
+            ctoffset:    response_plane / drift_speed - response_plane / fr_speed,
             ftoffset:    0.0,
             postgain:    1.0,
             fft_flag:    0,
@@ -179,7 +189,7 @@ local lar_defaults = {
     DL:          4.0   * wc.cm2 / wc.s,
     DT:          8.8   * wc.cm2 / wc.s,
     lifetime:    1000.0 * wc.ms,
-    drift_speed: 1.473 * wc.mm / wc.us,
+    drift_speed: drift_speed,
 };
 
 local daq_defaults = {
@@ -214,14 +224,11 @@ local base = schema.make({
         filename: "protodunevd-wires-larsoft-v3.json.bz2",
     },
 
-    // Drift planes from geometry (GDML via Phlex): the anode bound at the
-    // collection plane and the response plane response_plane (18.1 cm) from
-    // it, as the field response defines.  (The faces above put the anode at
-    // the grid, 57 mm behind the collection plane, and the response plane
-    // 123.9 mm from the collection plane.)
+    // Drift planes from geometry (GDML via Phlex): the same anode cut-off as
+    // the faces above (the shield plane, apa_plane from W); the response
+    // plane is response_plane from W.
     drift_planes: {
-        anode_offset: 0.0,
-        short_drift: "error",
+        anode_offset: apa_plane,
     },
 
     // 8 anodes: anode0..anode3 (bottom drift), anode4..anode7 (top drift)
