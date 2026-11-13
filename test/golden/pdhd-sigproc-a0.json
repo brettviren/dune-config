@@ -12,7 +12,7 @@
       "data": {
          "filename": "protodunehd-wires-larsoft-v1.json.bz2"
       },
-      "name": "wires_apa0",
+      "name": "wires-e731c2c9e3",
       "type": "WireSchemaFile"
    },
    {
@@ -31,21 +31,21 @@
          ],
          "ident": 0,
          "nimpacts": 10,
-         "wire_schema": "WireSchemaFile:wires_apa0"
+         "wire_schema": "WireSchemaFile:wires-e731c2c9e3"
       },
       "name": "apa0",
       "type": "AnodePlane"
    },
    {
       "data": { },
-      "name": "dft_apa0",
+      "name": "dft-22e67cc3ae",
       "type": "FftwDFT"
    },
    {
       "data": {
          "filename": "np04hd-garfield-6paths-mcmc-bestfit.json.bz2"
       },
-      "name": "fr_apa0",
+      "name": "fr-fd0a8501f2",
       "type": "FieldResponse"
    },
    {
@@ -56,34 +56,34 @@
          "shaping": 2200,
          "tick": 500
       },
-      "name": "elec_apa0",
+      "name": "elec-8e574e5914",
       "type": "ColdElecResponse"
    },
    {
       "data": {
          "filename": "protodunehd-field-response-filters.json.bz2",
          "plane": 0,
-         "wires": "WireSchemaFile:wires_apa0"
+         "wires": "WireSchemaFile:wires-e731c2c9e3"
       },
-      "name": "fltresp_apa0_0",
+      "name": "fltresp0-529233565f",
       "type": "FilterResponse"
    },
    {
       "data": {
          "filename": "protodunehd-field-response-filters.json.bz2",
          "plane": 1,
-         "wires": "WireSchemaFile:wires_apa0"
+         "wires": "WireSchemaFile:wires-e731c2c9e3"
       },
-      "name": "fltresp_apa0_1",
+      "name": "fltresp1-47a25e5ba0",
       "type": "FilterResponse"
    },
    {
       "data": {
          "filename": "protodunehd-field-response-filters.json.bz2",
          "plane": 2,
-         "wires": "WireSchemaFile:wires_apa0"
+         "wires": "WireSchemaFile:wires-e731c2c9e3"
       },
-      "name": "fltresp_apa0_2",
+      "name": "fltresp2-3bf6777a9a",
       "type": "FilterResponse"
    },
    {
@@ -249,14 +249,14 @@
          "ADC_mV": 11702142857.142859,
          "anode": "AnodePlane:apa0",
          "ctoffset": 1000,
-         "dft": "FftwDFT:dft_apa0",
-         "elecresponse": "ColdElecResponse:elec_apa0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "elecresponse": "ColdElecResponse:elec-8e574e5914",
          "fft_flag": 0,
-         "field_response": "FieldResponse:fr_apa0",
+         "field_response": "FieldResponse:fr-fd0a8501f2",
          "filter_responses": [
-            "FilterResponse:fltresp_apa0_0",
-            "FilterResponse:fltresp_apa0_1",
-            "FilterResponse:fltresp_apa0_2"
+            "FilterResponse:fltresp0-529233565f",
+            "FilterResponse:fltresp1-47a25e5ba0",
+            "FilterResponse:fltresp2-3bf6777a9a"
          ],
          "ftoffset": 0,
          "isWrapped": false,

@@ -10,7 +10,14 @@
    },
    {
       "data": {
-         "seed": 1
+         "generator": "default",
+         "seeds": [
+            0,
+            0,
+            0,
+            0,
+            0
+         ]
       },
       "name": "rng_apa0",
       "type": "Random"
@@ -54,7 +61,7 @@
       "data": {
          "filename": "protodunehd-wires-larsoft-v1.json.bz2"
       },
-      "name": "wires_apa0",
+      "name": "wires-e731c2c9e3",
       "type": "WireSchemaFile"
    },
    {
@@ -73,21 +80,21 @@
          ],
          "ident": 0,
          "nimpacts": 10,
-         "wire_schema": "WireSchemaFile:wires_apa0"
+         "wire_schema": "WireSchemaFile:wires-e731c2c9e3"
       },
       "name": "apa0",
       "type": "AnodePlane"
    },
    {
       "data": { },
-      "name": "dft_apa0",
+      "name": "dft-22e67cc3ae",
       "type": "FftwDFT"
    },
    {
       "data": {
          "filename": "np04hd-garfield-6paths-mcmc-bestfit.json.bz2"
       },
-      "name": "fr_apa0",
+      "name": "fr-fd0a8501f2",
       "type": "FieldResponse"
    },
    {
@@ -98,58 +105,58 @@
          "shaping": 2200,
          "tick": 500
       },
-      "name": "elec_apa0",
+      "name": "elec-8e574e5914",
       "type": "ColdElecResponse"
    },
    {
       "data": {
-         "dft": "FftwDFT:dft_apa0",
-         "field_response": "FieldResponse:fr_apa0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-fd0a8501f2",
          "long_padding": 1500000,
          "long_responses": [ ],
          "nticks": 6125,
          "overall_short_padding": 125000,
          "plane": 0,
          "short_responses": [
-            "ColdElecResponse:elec_apa0"
+            "ColdElecResponse:elec-8e574e5914"
          ],
          "tick": 500
       },
-      "name": "pir0_apa0",
+      "name": "pir0-e0875cc400",
       "type": "PlaneImpactResponse"
    },
    {
       "data": {
-         "dft": "FftwDFT:dft_apa0",
-         "field_response": "FieldResponse:fr_apa0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-fd0a8501f2",
          "long_padding": 1500000,
          "long_responses": [ ],
          "nticks": 6125,
          "overall_short_padding": 125000,
          "plane": 1,
          "short_responses": [
-            "ColdElecResponse:elec_apa0"
+            "ColdElecResponse:elec-8e574e5914"
          ],
          "tick": 500
       },
-      "name": "pir1_apa0",
+      "name": "pir1-2f1f2625f7",
       "type": "PlaneImpactResponse"
    },
    {
       "data": {
-         "dft": "FftwDFT:dft_apa0",
-         "field_response": "FieldResponse:fr_apa0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-fd0a8501f2",
          "long_padding": 1500000,
          "long_responses": [ ],
          "nticks": 6125,
          "overall_short_padding": 125000,
          "plane": 2,
          "short_responses": [
-            "ColdElecResponse:elec_apa0"
+            "ColdElecResponse:elec-8e574e5914"
          ],
          "tick": 500
       },
-      "name": "pir2_apa0",
+      "name": "pir2-59f708f0f3",
       "type": "PlaneImpactResponse"
    },
    {
@@ -159,15 +166,16 @@
       },
       "data": {
          "anode": "AnodePlane:apa0",
-         "dft": "FftwDFT:dft_apa0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
          "drift_speed": 0.0016000000000000001,
          "first_frame_number": 0,
          "fluctuate": true,
+         "frame_ident": "deposet",
          "nsigma": 3,
          "pirs": [
-            "PlaneImpactResponse:pir0_apa0",
-            "PlaneImpactResponse:pir1_apa0",
-            "PlaneImpactResponse:pir2_apa0"
+            "PlaneImpactResponse:pir0-e0875cc400",
+            "PlaneImpactResponse:pir1-2f1f2625f7",
+            "PlaneImpactResponse:pir2-59f708f0f3"
          ],
          "readout_time": 3062500,
          "rng": "Random:rng_apa0",
@@ -197,7 +205,7 @@
       "data": {
          "anode": "AnodePlane:apa0",
          "chanstat": "",
-         "dft": "FftwDFT:dft_apa0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
          "nsamples": 6000,
          "period": 500,
          "spectra_file": "protodunehd-noise-spectra-14mVfC-v1.json.bz2",
@@ -212,7 +220,7 @@
          "nout": 1
       },
       "data": {
-         "dft": "FftwDFT:dft_apa0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
          "model": "EmpiricalNoiseModel:noise_model_apa0",
          "nsamples": 6000,
          "replacement_percentage": 0.02,
@@ -247,27 +255,27 @@
       "data": {
          "filename": "protodunehd-field-response-filters.json.bz2",
          "plane": 0,
-         "wires": "WireSchemaFile:wires_apa0"
+         "wires": "WireSchemaFile:wires-e731c2c9e3"
       },
-      "name": "fltresp_apa0_0",
+      "name": "fltresp0-529233565f",
       "type": "FilterResponse"
    },
    {
       "data": {
          "filename": "protodunehd-field-response-filters.json.bz2",
          "plane": 1,
-         "wires": "WireSchemaFile:wires_apa0"
+         "wires": "WireSchemaFile:wires-e731c2c9e3"
       },
-      "name": "fltresp_apa0_1",
+      "name": "fltresp1-47a25e5ba0",
       "type": "FilterResponse"
    },
    {
       "data": {
          "filename": "protodunehd-field-response-filters.json.bz2",
          "plane": 2,
-         "wires": "WireSchemaFile:wires_apa0"
+         "wires": "WireSchemaFile:wires-e731c2c9e3"
       },
-      "name": "fltresp_apa0_2",
+      "name": "fltresp2-3bf6777a9a",
       "type": "FilterResponse"
    },
    {
@@ -433,14 +441,14 @@
          "ADC_mV": 11702142857.142859,
          "anode": "AnodePlane:apa0",
          "ctoffset": 1000,
-         "dft": "FftwDFT:dft_apa0",
-         "elecresponse": "ColdElecResponse:elec_apa0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "elecresponse": "ColdElecResponse:elec-8e574e5914",
          "fft_flag": 0,
-         "field_response": "FieldResponse:fr_apa0",
+         "field_response": "FieldResponse:fr-fd0a8501f2",
          "filter_responses": [
-            "FilterResponse:fltresp_apa0_0",
-            "FilterResponse:fltresp_apa0_1",
-            "FilterResponse:fltresp_apa0_2"
+            "FilterResponse:fltresp0-529233565f",
+            "FilterResponse:fltresp1-47a25e5ba0",
+            "FilterResponse:fltresp2-3bf6777a9a"
          ],
          "ftoffset": 0,
          "isWrapped": false,

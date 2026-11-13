@@ -100,9 +100,26 @@
                : ctx + ".sigproc.{plane2layer,wiener_filters} must have 3 entries";
         true,
 
-    // Validate a whole detector description; returns it unchanged or raises.
-    // Checks structure/type, not physics values.
+    // One anode entry, validated when it is first used (Jsonnet evaluates
+    // array elements lazily): a job that uses one anode of a large detector
+    // does not pay for checking all of them.
+    checked_anode(a, ctx)::
+        assert $.validate_anode(a, ctx);
+        a,
+
+    // Validate a whole detector description, every anode included; returns
+    // it unchanged or raises.  Checks structure/type, not physics values.
     validate(det)::
+        local d = $.validate_fields(det);
+        assert std.all([
+                   $.validate_anode(det.anodes[i], det.name + ".anodes[" + i + "]")
+                   for i in std.range(0, std.length(det.anodes) - 1)
+               ])
+               : det.name + ": anode validation failed";
+        d,
+
+    // Validate everything but the anode entries themselves.
+    validate_fields(det)::
         assert std.objectHas(det, 'name') && std.isString(det.name)
                : "detector.name must be a string";
         assert std.objectHas(det, 'daq') && std.isObject(det.daq)
@@ -138,18 +155,19 @@
                && !std.objectHas(det.splat, 'tick')
                : det.name + ".splat needs {sparse, reference_time, smear_long[3], smear_tran[3]}"
                  + " and no window_start/window_duration/tick (derived per anode)";
-        assert std.all([
-                   $.validate_anode(det.anodes[i], det.name + ".anodes[" + i + "]")
-                   for i in std.range(0, std.length(det.anodes) - 1)
-               ])
-               : det.name + ": anode validation failed";
         det,
 
-    // Build a detector description: apply structural defaults, then validate.
+    // Build a detector description: apply structural defaults, then validate
+    // (the anodes as they are used; validate(det) checks them all at once).
     // `fields` is the full description minus the structural defaults.
     make(fields)::
+        local name = std.get(fields, "name", "detector");
         local det = $.detector_structural_defaults + fields + {
-            anodes: [$.anode_structural_defaults + a for a in fields.anodes],
+            anodes: [
+                $.checked_anode($.anode_structural_defaults + fields.anodes[i],
+                                name + ".anodes[" + i + "]")
+                for i in std.range(0, std.length(fields.anodes) - 1)
+            ],
         };
-        $.validate(det),
+        $.validate_fields(det),
 }

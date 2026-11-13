@@ -30,6 +30,18 @@
 //   Consequence: the job builders only need to wire the STAGE inodes into a
 //   pipeline; the services they (transitively) use are pulled in and ordered
 //   automatically by pg.uses().  No manual service list is needed.
+//
+// SHARED SERVICES.  Services whose configuration does not depend on the anode
+// (DFT, field response, electronics response, plane impact responses) are
+// named by their content: service_prefix + a label + a hash of their data
+// (shared_name below).  Two anodes, or two WCT islands (Mains) of one Phlex
+// job, that need the same service therefore name the same WCT instance: WCT's
+// NamedFactory hands both the one object, and WCT Main configures it once
+// (a later Main skips an identically configured component and refuses a
+// differently configured one).  These components are read-only after
+// configure (FftwDFT guards its plan cache), so concurrent islands may share
+// them.  Per-anode state (anode, RNG, noise model, sim/sigproc stages) keeps
+// per-anode names.
 
 local wc   = import "wirecell.jsonnet";
 local dets = import "dune/wct/detectors.jsonnet";
@@ -54,17 +66,24 @@ local nticks_ductor   = nticks_daq + response_nticks;
 local readout_time    = nticks_ductor * tick;
 local start_time      = det.sim.tick0_time - response_plane / det.lar.drift_speed;
 
+// Content-derived name of a shared service: identical data <=> same name.
+local shared_name(label, data) =
+    pfx + label + "-" + std.substr(std.md5(std.manifestJsonEx(data, "")), 0, 10);
+
 // --- leaf service inodes (no dependencies) ----------------------------------
 local dft = {
     type: "FftwDFT",
-    name: pfx + "dft_" + a.name,
+    name: shared_name("dft", self.data),
     data: {},
 };
 
+// Per anode: a Random is not safe to share between concurrent islands.
+// Fixed, per-anode seeds: reproducible, and different noise and fluctuations
+// on different anodes (anode ident 0 keeps WCT's default seeds).
 local rng = {
     type: "Random",
     name: pfx + "rng_" + a.name,
-    data: { seed: 1 },   // fixed seed for reproducible noise
+    data: { generator: "default", seeds: [0, 0, 0, 0, a.ident] },
 };
 
 local geo_phlex = geometry == "phlex";
@@ -77,7 +96,7 @@ local wires = if geo_phlex then {
     data: { key: "geometry" },
 } else {
     type: "WireSchemaFile",
-    name: pfx + "wires_" + a.name,
+    name: shared_name("wires", self.data),   // one load of the file per job
     data: { filename: det.wires.filename },
 };
 
@@ -95,7 +114,7 @@ local drift_uses = if geo_phlex then [drift_planes] else [];
 
 local fr = {
     type: "FieldResponse",
-    name: pfx + "fr_" + a.name,
+    name: shared_name("fr", self.data),
     data: { filename: a.field.filename },
 };
 
@@ -103,7 +122,7 @@ local fr = {
 // the fields each type needs are checked by lib/schema.jsonnet elec_fields).
 local elec = {
     type: a.elec.type,
-    name: pfx + "elec_" + a.name,
+    name: shared_name("elec", [self.type, self.data]),
     data: {
         tick:   tick,
         nticks: nticks_ductor,
@@ -137,7 +156,7 @@ local pir_short_padding = response_plane / det.lar.drift_speed * 2.0;
 
 local pir(plane) = {
     type: "PlaneImpactResponse",
-    name: pfx + "pir%d_" % plane + a.name,
+    name: shared_name("pir%d" % plane, self.data),
     data: {
         plane:                 plane,
         dft:                   wc.tn(dft),
@@ -167,6 +186,36 @@ local drifter_comp = {
     uses: [rng] + drift_uses,
 };
 
+// --- detector-wide drift ----------------------------------------------------
+// One Drifter over every drift region of the detector, for a job that drifts
+// once ahead of its per-anode islands (dune/wct/job/drift.jsonnet; the art
+// multi-sim likewise drifts once before its fanout).  The islands then take
+// drifted depos (sim-sigproc drifted="yes") and select their anode's with
+// depofilter.  Regions: every distinct face of the detector, or, with
+// geometry "phlex", the drift planes' xregions (also all of them).
+local distinct(xs) = std.foldl(function(acc, x) if std.member(acc, x) then acc else acc + [x], xs, []);
+local all_faces = distinct(std.flattenArrays([an.faces for an in det.anodes]));
+
+local rng_detector = {
+    type: "Random",
+    name: pfx + "rng_detector",
+    data: { generator: "default", seeds: [0, 0, 0, 1, 0] },
+};
+
+local drifter_detector = {
+    type: "Drifter",
+    name: pfx + "drifter_detector",
+    data: {
+        rng:         wc.tn(rng_detector),
+        DL:          det.lar.DL,
+        DT:          det.lar.DT,
+        lifetime:    det.lar.lifetime,
+        drift_speed: det.lar.drift_speed,
+        fluctuate:   det.sim.fluctuate,
+    } + (if geo_phlex then { drift_planes: wc.tn(drift_planes) } else { xregions: all_faces }),
+    uses: [rng_detector] + drift_uses,
+};
+
 local noise_model = {
     type: "EmpiricalNoiseModel",
     name: pfx + "noise_model_" + a.name,
@@ -186,7 +235,7 @@ local has_filter_response = a.filter_response != null;
 local filter_response_comps = if has_filter_response then [
     {
         type: "FilterResponse",
-        name: pfx + "fltresp_" + a.name + "_" + plane,
+        name: shared_name("fltresp%d" % plane, self.data),
         data: {
             filename: a.filter_response.filename,
             plane:    plane,
@@ -207,6 +256,35 @@ local setdrifter = {
     uses: [drifter_comp],
 };
 
+local setdrifter_detector = {
+    type: "DepoSetDrifter",
+    name: pfx + "deposet_drifter_detector",
+    data: { drifter: wc.tn(drifter_detector) },
+    uses: [drifter_detector],
+};
+
+// Drifted depos of this anode only: those in its faces' sensitive volumes.
+local depofilter = {
+    type: "DepoSetFilter",
+    name: pfx + "depofilter_" + a.name,
+    data: { anode: wc.tn(anode) },
+    uses: [anode],
+};
+
+// Hydra switch: DeposOrBust passes a non-empty depo set on port 0 (to the
+// sim/sigproc work) and turns an empty one into an empty frame on port 1;
+// FrameSync merges the two paths.  An anode without depos then costs nothing.
+local deposorbust = {
+    type: "DeposOrBust",
+    name: pfx + "deposorbust_" + a.name,
+    data: {},
+};
+local framesync = {
+    type: "FrameSync",
+    name: pfx + "framesync_" + a.name,
+    data: {},
+};
+
 local transform = {
     type: "DepoTransform",
     name: pfx + "transform_" + a.name,
@@ -222,6 +300,9 @@ local transform = {
         tick:               tick,
         nsigma:             det.sim.nsigma,
         first_frame_number: 0,
+        // The frame names its event (the depo set's ident), also when a
+        // hydra switch skips events with no depos for this anode.
+        frame_ident:        "deposet",
     },
     uses: [rng, anode, dft] + pirs,
 };
@@ -344,6 +425,10 @@ local sigproc = {
     },
 
     setdrifter:: setdrifter,
+    setdrifter_detector:: setdrifter_detector,
+    depofilter:: depofilter,
+    deposorbust:: deposorbust,
+    framesync:: framesync,
     transform:: transform,
     reframer:: reframer,
     addnoise:: addnoise,

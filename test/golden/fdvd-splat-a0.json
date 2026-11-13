@@ -10,7 +10,14 @@
    },
    {
       "data": {
-         "seed": 1
+         "generator": "default",
+         "seeds": [
+            0,
+            0,
+            0,
+            0,
+            0
+         ]
       },
       "name": "rng_anode0",
       "type": "Random"
@@ -54,7 +61,7 @@
       "data": {
          "filename": "dunevd10kt_3view_30deg_v6_refactored.json.bz2"
       },
-      "name": "wires_anode0",
+      "name": "wires-660d126385",
       "type": "WireSchemaFile"
    },
    {
@@ -73,7 +80,7 @@
          ],
          "ident": 0,
          "nimpacts": 10,
-         "wire_schema": "WireSchemaFile:wires_anode0"
+         "wire_schema": "WireSchemaFile:wires-660d126385"
       },
       "name": "anode0",
       "type": "AnodePlane"
@@ -82,7 +89,7 @@
       "data": {
          "filename": "protodunevd_FR_imbalance3p_260501.json.bz2"
       },
-      "name": "fr_anode0",
+      "name": "fr-d9ede39aa0",
       "type": "FieldResponse"
    },
    {
@@ -92,7 +99,7 @@
       },
       "data": {
          "anode": "AnodePlane:anode0",
-         "field_response": "FieldResponse:fr_anode0",
+         "field_response": "FieldResponse:fr-d9ede39aa0",
          "reference_time": 0,
          "smear_long": [
             0,

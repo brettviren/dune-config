@@ -10,7 +10,14 @@
    },
    {
       "data": {
-         "seed": 1
+         "generator": "default",
+         "seeds": [
+            0,
+            0,
+            0,
+            0,
+            0
+         ]
       },
       "name": "rng_anode0",
       "type": "Random"
@@ -54,7 +61,7 @@
       "data": {
          "filename": "dunevd10kt_3view_30deg_v6_refactored.json.bz2"
       },
-      "name": "wires_anode0",
+      "name": "wires-660d126385",
       "type": "WireSchemaFile"
    },
    {
@@ -73,21 +80,21 @@
          ],
          "ident": 0,
          "nimpacts": 10,
-         "wire_schema": "WireSchemaFile:wires_anode0"
+         "wire_schema": "WireSchemaFile:wires-660d126385"
       },
       "name": "anode0",
       "type": "AnodePlane"
    },
    {
       "data": { },
-      "name": "dft_anode0",
+      "name": "dft-22e67cc3ae",
       "type": "FftwDFT"
    },
    {
       "data": {
          "filename": "protodunevd_FR_imbalance3p_260501.json.bz2"
       },
-      "name": "fr_anode0",
+      "name": "fr-d9ede39aa0",
       "type": "FieldResponse"
    },
    {
@@ -98,58 +105,58 @@
          "shaping": 2200,
          "tick": 500
       },
-      "name": "elec_anode0",
+      "name": "elec-d203390129",
       "type": "ColdElecResponse"
    },
    {
       "data": {
-         "dft": "FftwDFT:dft_anode0",
-         "field_response": "FieldResponse:fr_anode0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-d9ede39aa0",
          "long_padding": 1500000,
          "long_responses": [ ],
          "nticks": 8725,
          "overall_short_padding": 225456.83009770044,
          "plane": 0,
          "short_responses": [
-            "ColdElecResponse:elec_anode0"
+            "ColdElecResponse:elec-d203390129"
          ],
          "tick": 500
       },
-      "name": "pir0_anode0",
+      "name": "pir0-0dafaed9ae",
       "type": "PlaneImpactResponse"
    },
    {
       "data": {
-         "dft": "FftwDFT:dft_anode0",
-         "field_response": "FieldResponse:fr_anode0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-d9ede39aa0",
          "long_padding": 1500000,
          "long_responses": [ ],
          "nticks": 8725,
          "overall_short_padding": 225456.83009770044,
          "plane": 1,
          "short_responses": [
-            "ColdElecResponse:elec_anode0"
+            "ColdElecResponse:elec-d203390129"
          ],
          "tick": 500
       },
-      "name": "pir1_anode0",
+      "name": "pir1-074b7b4f4e",
       "type": "PlaneImpactResponse"
    },
    {
       "data": {
-         "dft": "FftwDFT:dft_anode0",
-         "field_response": "FieldResponse:fr_anode0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-d9ede39aa0",
          "long_padding": 1500000,
          "long_responses": [ ],
          "nticks": 8725,
          "overall_short_padding": 225456.83009770044,
          "plane": 2,
          "short_responses": [
-            "ColdElecResponse:elec_anode0"
+            "ColdElecResponse:elec-d203390129"
          ],
          "tick": 500
       },
-      "name": "pir2_anode0",
+      "name": "pir2-d5151e3bc3",
       "type": "PlaneImpactResponse"
    },
    {
@@ -159,15 +166,16 @@
       },
       "data": {
          "anode": "AnodePlane:anode0",
-         "dft": "FftwDFT:dft_anode0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
          "drift_speed": 0.0016056288906533874,
          "first_frame_number": 0,
          "fluctuate": true,
+         "frame_ident": "deposet",
          "nsigma": 3,
          "pirs": [
-            "PlaneImpactResponse:pir0_anode0",
-            "PlaneImpactResponse:pir1_anode0",
-            "PlaneImpactResponse:pir2_anode0"
+            "PlaneImpactResponse:pir0-0dafaed9ae",
+            "PlaneImpactResponse:pir1-074b7b4f4e",
+            "PlaneImpactResponse:pir2-d5151e3bc3"
          ],
          "readout_time": 4362500,
          "rng": "Random:rng_anode0",
@@ -197,7 +205,7 @@
       "data": {
          "anode": "AnodePlane:anode0",
          "chanstat": "",
-         "dft": "FftwDFT:dft_anode0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
          "nsamples": 8500,
          "period": 500,
          "spectra_file": "pdvd-bottom-noise-spectra-14mVfC-v1.json.bz2",
@@ -212,7 +220,7 @@
          "nout": 1
       },
       "data": {
-         "dft": "FftwDFT:dft_anode0",
+         "dft": "FftwDFT:dft-22e67cc3ae",
          "model": "EmpiricalNoiseModel:noise_model_anode0",
          "nsamples": 8500,
          "replacement_percentage": 0.02,

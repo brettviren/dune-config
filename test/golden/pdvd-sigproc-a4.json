@@ -12,7 +12,7 @@
       "data": {
          "filename": "protodunevd-wires-larsoft-v3.json.bz2"
       },
-      "name": "wires_anode4",
+      "name": "wires-dcbc9ce3d7",
       "type": "WireSchemaFile"
    },
    {
@@ -31,21 +31,21 @@
          ],
          "ident": 4,
          "nimpacts": 10,
-         "wire_schema": "WireSchemaFile:wires_anode4"
+         "wire_schema": "WireSchemaFile:wires-dcbc9ce3d7"
       },
       "name": "anode4",
       "type": "AnodePlane"
    },
    {
       "data": { },
-      "name": "dft_anode4",
+      "name": "dft-22e67cc3ae",
       "type": "FftwDFT"
    },
    {
       "data": {
          "filename": "protodunevd_FR_norminal_260324.json.bz2"
       },
-      "name": "fr_anode4",
+      "name": "fr-d33c70bf33",
       "type": "FieldResponse"
    },
    {
@@ -55,7 +55,7 @@
          "postgain": 1.52,
          "tick": 500
       },
-      "name": "elec_anode4",
+      "name": "elec-edc0f680ed",
       "type": "JsonElecResponse"
    },
    {
@@ -191,10 +191,10 @@
          "ADC_mV": 8191500000,
          "anode": "AnodePlane:anode4",
          "ctoffset": 4000,
-         "dft": "FftwDFT:dft_anode4",
-         "elecresponse": "JsonElecResponse:elec_anode4",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "elecresponse": "JsonElecResponse:elec-edc0f680ed",
          "fft_flag": 0,
-         "field_response": "FieldResponse:fr_anode4",
+         "field_response": "FieldResponse:fr-d33c70bf33",
          "filter_responses": [ ],
          "ftoffset": 0,
          "isWrapped": false,
