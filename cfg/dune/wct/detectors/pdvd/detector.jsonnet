@@ -214,6 +214,16 @@ local base = schema.make({
         filename: "protodunevd-wires-larsoft-v3.json.bz2",
     },
 
+    // Drift planes from geometry (GDML via Phlex): the anode bound at the
+    // collection plane and the response plane response_plane (18.1 cm) from
+    // it, as the field response defines.  (The faces above put the anode at
+    // the grid, 57 mm behind the collection plane, and the response plane
+    // 123.9 mm from the collection plane.)
+    drift_planes: {
+        anode_offset: 0.0,
+        short_drift: "error",
+    },
+
     // 8 anodes: anode0..anode3 (bottom drift), anode4..anode7 (top drift)
     anodes: [make_anode(a) for a in std.range(0, 7)],
 

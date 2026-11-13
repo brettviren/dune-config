@@ -23,6 +23,12 @@
     detector_structural_defaults:: {
         // Response systematics off unless a detector opts in.
         sys_status: false,
+        // Drift planes made from geometry (parts.jsonnet geometry "phlex",
+        // wire-cell-phlex FacadeDriftPlanes): the anode bound is the
+        // collection plane moved anode_offset toward the cathode; short_drift
+        // "error" | "mirror" for faces whose drift volume ends before the
+        // response plane.
+        drift_planes: { anode_offset: 0.0, short_drift: "error" },
     },
 
     // Electronics-response types and the fields each one needs.  The anode's

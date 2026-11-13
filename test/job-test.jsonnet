@@ -169,4 +169,13 @@ assert by_tn(cfg_mu)["OmnibusSigProc:sigproc_anode281"] == by_tn(isl("281"))["Om
        && by_tn(cfg_mu)["Random:rng_anode87"] == by_tn(isl("87"))["Random:rng_anode87"]
        : "branch configs equal the island configs";
 
+// --- drift planes from geometry: per-detector settings ------------------------
+local dp(det) = [c.data for c in sim_sigproc(detector=det, anode_index="0", geometry="phlex")
+                 if c.type == "FacadeDriftPlanes"][0];
+assert dp("pdhd").short_drift == "mirror" && std.abs(dp("pdhd").anode_offset - 9.52) < 0.01
+       : "pdhd: anode cut at the first induction plane, outer faces mirrored";
+assert dp("pdvd").short_drift == "error" && dp("pdvd").anode_offset == 0 && dp("pdvd").response_distance == 181
+       : "pdvd: anode at the collection plane, response 18.1 cm";
+assert dp("fdvd").short_drift == "error" && dp("fdvd").anode_offset == 0 : "fdvd unchanged";
+
 { ok: true }

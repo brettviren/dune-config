@@ -223,6 +223,16 @@ local base = schema.make({
         filename: "protodunehd-wires-larsoft-v1.json.bz2",
     },
 
+    // Drift planes from geometry (GDML via Phlex): the same anode cut as the
+    // faces above (first induction plane, apa_plane - apa_w2w/2 = 9.52 mm
+    // from the collection plane), and both faces of an APA active with the
+    // same drift length: the GDML's outer (wall side) TPCs are only ~2.5 cm,
+    // less than the 10 cm response distance.
+    drift_planes: {
+        anode_offset: apa_plane - 0.5 * apa_w2w,
+        short_drift: "mirror",
+    },
+
     // 4 APAs: apa0 .. apa3
     anodes: [make_anode(n) for n in std.range(0, 3)],
 

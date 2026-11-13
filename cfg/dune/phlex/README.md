@@ -72,19 +72,44 @@ See the top-level README.
 
 ## Geometry from GDML (no WCT wires file)
 
-`gdml=<file>` makes the job read the detector's LArSoft-convention GDML once
-per job instead of a WCT wires file: phlex-gdml's `pgd_provider` makes the GDML
-a `job`-layer product, wire-cell-phlex's `wcph_gdml_geometry` turns it into the
-wire schema (LArSoft-compatible channels, `crp` readout, `pair-tpc` anodes)
+`gdml=default` (or `gdml=<file>`) makes the job read the detector's
+LArSoft-convention GDML once per job instead of a WCT wires file: phlex-gdml's
+`pgd_provider` makes the GDML a `job`-layer product, wire-cell-phlex's
+`wcph_gdml_geometry` turns it into the wire schema (LArSoft channel numbers)
 and the drift planes, and the WCT executor takes both as inputs beside its
 event data and configures WCT on its first call.  `anode_indices=[...]` runs
 several anodes (islands) in one job.
 
+`dune/phlex/gdml.jsonnet` gives each detector's GDML (per variant) and the
+LArSoft channel map and TPC sorter the transform ports; each reproduces the
+detector's WCT wires file channel for channel (wire-cell-phlex
+`gdml_wires_*` tests):
+
+| detname | GDML (`default`)                | readout | sorter        | matches wires file          |
+|---------|---------------------------------|---------|---------------|-----------------------------|
+| pdhd    | protodunehd_v8_refactored       | apa     | apa           | protodunehd-wires-larsoft-v1 |
+| pdvd    | protodunevd_v4_refactored       | crp     | cru60d-pdvd   | protodunevd-wires-larsoft-v3 |
+| fdvd    | dunevd10kt_3view_30deg_v8_full10kt_ggd (v6: _v6_refactored) | crp | cru60d | fdvd-v8-fromgeo-pairtpc |
+
+`gdml_readout`, `gdml_sorter`, `gdml_grouping` override them.  The WCT side of
+the drift planes is per detector, `drift_planes` in
+`dune/wct/detectors/<det>/detector.jsonnet` (FacadeDriftPlanes):
+
+- pdhd: anode cut 9.52 mm from the collection plane (the first induction
+  plane, as the file-mode faces), and `short_drift: "mirror"`: the GDML's
+  outer (wall side) TPCs are ~2.5 cm, less than the 10 cm response distance,
+  so they get their APA's inner drift length (both faces active, as the
+  file-mode faces).  Faces agree with file mode to ~2 mm.
+- pdvd: anode cut at the collection plane and the response plane 18.1 cm from
+  it (the field response's).  The file-mode faces put the response plane
+  123.9 mm from the collection plane; GDML-mode signals come ~78 ticks
+  earlier than file mode's (2 track events, all 8 anodes), the charge agrees
+  within 1 %.
+
 ```
 export GDML_PATH=<dunecore>/dunecore/Geometry/gdml   # where the GDML is
 phlexed -c dune/phlex/sp-job.jsonnet -A detname=fdvd -A variant=v8 -A sp_input=sim \
-    -A in_file=depos.npz -A out_file=signals.npz \
-    -A gdml=dunevd10kt_3view_30deg_v8_full10kt_ggd.gdml \
+    -A in_file=depos.npz -A out_file=signals.npz -A gdml=default \
     --tla-code anode_indices='[0,200]'
 ```
 

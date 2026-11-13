@@ -18,16 +18,19 @@
 //   raw DAQ : workflow(d, "sigproc",     in_kind="daq-hdf",      ...)   [gated]
 //
 // Geometry from GDML instead of a WCT wires file: give gdml=<file> (a path or
-// a name on GDML_PATH).  The workflow then adds phlex-gdml's provider
-// (pgd_provider: GDML -> gdml::DocumentPtr at the job layer) and
+// a name on GDML_PATH), or gdml="default" for the detector's GDML for the
+// variant (dune/phlex/gdml.jsonnet).  The workflow then adds phlex-gdml's
+// provider (pgd_provider: GDML -> gdml::DocumentPtr at the job layer) and
 // wire-cell-phlex's wcph_gdml_geometry transforms (-> wire schema and drift
-// faces, job layer), gives the executor those two products as extra inputs
+// planes, job layer), gives the executor those two products as extra inputs
 // ("geometry" config; WCT is configured on its first call) and passes
 // geometry="phlex" to the WCT job, which then uses FacadeWireSchema /
-// FacadeDriftPlanes.  gdml_readout / gdml_grouping select the channel map and
-// anode grouping (wire_cell_phlex/GdmlWires.hpp).
+// FacadeDriftPlanes.  gdml_readout / gdml_sorter / gdml_grouping select the
+// LArSoft channel map, TPC sorter and anode grouping the transforms port
+// (wire_cell_phlex/GdmlWires.hpp); "" takes the detector's from gdml.jsonnet.
 
 local sources = import "sources.jsonnet";
+local gdmls   = import "gdml.jsonnet";
 local sinks   = import "sinks.jsonnet";
 
 // WCT executor module per data-flow (wire-cell-phlex shape executors; cpp is
@@ -62,9 +65,10 @@ function(
     wct_log_sink  = "",
     wct_log_level = "",
     stage         = "",            // phlex job stage (required by Phlex >= 0.4); "" -> wct_job
-    gdml          = "",            // GDML file: geometry from GDML (see above); "" -> wires file
-    gdml_readout  = "crp",
-    gdml_grouping = "pair-tpc",
+    gdml          = "",            // GDML file or "default": geometry from GDML (see above); "" -> wires file
+    gdml_readout  = "",            // "" -> the detector's (gdml.jsonnet)
+    gdml_sorter   = "",
+    gdml_grouping = "",
     // Several anodes in one job: one executor island (module "wct<n>") and
     // one sink ("sink<n>", writing out_file with "-a<n>" before ".npz") per
     // anode, all reading the same source (and geometry).  [] -> anode_index.
@@ -107,17 +111,23 @@ assert !combine || (drift_job && std.length(anode_indices) > 0)
        : 'combine needs drift "job" and anode_indices';
 
 local use_gdml = gdml != "";
+local gdml_det = std.get(gdmls, detname, {});
+assert gdml != "default" || std.objectHas(gdml_det, "files")
+       : 'gdml "default": no GDML known for detector "%s" (dune/phlex/gdml.jsonnet)' % detname;
+local gdml_file = if gdml == "default" then std.get(gdml_det.files, variant, gdml_det.files.default) else gdml;
+local gdml_opt(key, given, fallback) = if given != "" then given else std.get(gdml_det, key, fallback);
 
 // Job-layer geometry: provider + transforms, and the executor's extra inputs.
 local geo_sources = if use_gdml then {
-    gdml: { cpp: "pgd_provider", gdml: gdml, creator: "gdml", suffix: "gdml", layer: "job" },
+    gdml: { cpp: "pgd_provider", gdml: gdml_file, creator: "gdml", suffix: "gdml", layer: "job" },
 } else {};
 local geo_modules = if use_gdml then {
     geometry: {
         cpp: "wcph_gdml_geometry",
         input: { creator: "gdml", layer: "job", suffix: "gdml" },
-        readout: gdml_readout,
-        grouping: gdml_grouping,
+        readout: gdml_opt("readout", gdml_readout, "crp"),
+        sorter: gdml_opt("sorter", gdml_sorter, "cru60d"),
+        grouping: gdml_opt("grouping", gdml_grouping, "pair-tpc"),
     },
 } else {};
 local geo_exec = if use_gdml then {

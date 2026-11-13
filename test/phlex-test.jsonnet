@@ -109,4 +109,20 @@ assert tj.modules.wct.wct_app == "TbbFlow" && tj.modules.wct.wct_tla.app_type ==
        && tj.modules.drift.wct_app == "TbbFlow" && tj.modules.drift.wct_tla.app_type == "TbbFlow"
        : "TbbFlow engine for every executor";
 
+// --- geometry from each detector's GDML ("default") ----------------------------
+local geo(det) = workflow(detname=det, wct_job="sim-sigproc", gdml="default");
+assert geo("pdhd").sources.gdml.gdml == "protodunehd_v8_refactored.gdml"
+       && geo("pdhd").modules.geometry.readout == "apa" && geo("pdhd").modules.geometry.sorter == "apa"
+       : "pdhd GDML: APA channel map and sorter";
+assert geo("pdvd").sources.gdml.gdml == "protodunevd_v4_refactored.gdml"
+       && geo("pdvd").modules.geometry.readout == "crp" && geo("pdvd").modules.geometry.sorter == "cru60d-pdvd"
+       : "pdvd GDML: CRP channel map, PDVD TPC sort";
+assert geo("fdvd").modules.geometry.sorter == "cru60d" : "fdvd GDML";
+assert workflow(detname="fdvd", wct_job="sim-sigproc", gdml="default", variant="v6").sources.gdml.gdml
+       == "dunevd10kt_3view_30deg_v6_refactored.gdml" : "GDML by variant";
+assert geo("pdhd").modules.wct.geometry.drift_planes.suffix == "drift_planes" : "drift planes product";
+local explicit = workflow(detname="pdhd", wct_job="sim-sigproc", gdml="my.gdml", gdml_sorter="cru60d");
+assert explicit.sources.gdml.gdml == "my.gdml" && explicit.modules.geometry.sorter == "cru60d"
+       && explicit.modules.geometry.readout == "apa" : "explicit file and option override";
+
 { ok: true }

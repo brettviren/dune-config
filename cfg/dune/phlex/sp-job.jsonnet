@@ -35,7 +35,10 @@ function(
     nevents       = 1,
     wct_log_sink  = "",
     wct_log_level = "",
-    gdml          = "",   // GDML file: geometry from GDML instead of the wires file
+    gdml          = "",   // GDML file or "default": geometry from GDML instead of the wires file
+    gdml_readout  = "",   // "" -> the detector's (gdml.jsonnet)
+    gdml_sorter   = "",
+    gdml_grouping = "",
     anode_indices = [],   // several anodes in one job (see workflow.jsonnet)
     drift         = "island",  // "job": drift once for all islands (sim only)
     hydra         = false,     // with drift "job": skip anodes without depos
@@ -61,6 +64,9 @@ workflow(
     wct_log_sink=wct_log_sink,
     wct_log_level=wct_log_level,
     gdml=gdml,
+    gdml_readout=gdml_readout,
+    gdml_sorter=gdml_sorter,
+    gdml_grouping=gdml_grouping,
     anode_indices=anode_indices,
     drift=drift,
     hydra=hydra,

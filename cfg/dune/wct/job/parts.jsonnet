@@ -103,7 +103,12 @@ local wires = if geo_phlex then {
 local drift_planes = {
     type: "FacadeDriftPlanes",
     name: "geometry",
-    data: { key: "geometry", response_distance: response_plane, anode_offset: 0.0 },
+    data: {
+        key: "geometry",
+        response_distance: response_plane,
+        anode_offset: std.get(det, "drift_planes", {}).anode_offset,
+        short_drift: std.get(det, "drift_planes", {}).short_drift,
+    },
 };
 
 // Anode/Drifter drift-plane parameters: inline "faces"/"xregions" from the
