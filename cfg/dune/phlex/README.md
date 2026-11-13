@@ -94,3 +94,36 @@ v8 wires file (`variant=v8`, file mode) and the same Drifter regions, in about
 6 s and 0.6 GB per anode instead of 17 s and 4 GB.  In GDML mode the Drifter
 gets the drift regions of the whole detector (as larwirecell's
 `DriftPlanesSource` gives); in file mode only the anode's own faces.
+
+## Whole detector: shared services, one drift, hydra
+
+Each anode is one WCT island (its own `WireCell::Main`), but the islands of a
+job share what does not depend on the anode.  `dune/wct/job/parts.jsonnet`
+names the DFT, field response, electronics response, plane impact responses,
+wires file and filter responses by their content (a label and a hash of
+their data), so islands that need the same service name the same WCT
+instance and WCT configures it once (a later Main skips an identically
+configured component).  Anodes, RNGs (seeds `[0,0,0,0,ident]`), noise
+models and the sim/SP stages stay per anode.
+
+`drift="job"` adds one `drift` module (`wcph_deposet_filter` running
+`dune/wct/job/drift.jsonnet`) that drifts each event's depos once over all
+drift regions; every island takes the drifted depos and keeps its anode's
+(`DepoSetFilter`), as the art multi-sim drifts once ahead of its fanout.
+`hydra=true` then lets an island whose anode has no depos skip sim and SP
+(`DeposOrBust` + `FrameSync`, an empty frame).  Frames carry their event
+number (`DepoTransform` `frame_ident: "deposet"`), and SP output is written
+as separate `gauss` and `wiener` arrays.
+
+```
+phlexed -c dune/phlex/sp-job.jsonnet -A detname=fdvd -A variant=v8 -A sp_input=sim \
+    -A in_file=depos.npz -A out_file=signals.npz --tla-code nevents=2 \
+    -A gdml=dunevd10kt_3view_30deg_v8_full10kt_ggd.gdml \
+    -A drift=job --tla-code hydra=true --tla-code anode_indices='std.range(0,319)'
+```
+
+FD-VD v8, 2 G4 muon events (the art multi-sim's): 320 islands in 24 s and
+3.9 GB peak RSS, against 32 s and 3.7 GB for the art/LArSoft multi-sim (320
+anodes, hydra) on the same events.  The memory is mostly the 320 AnodePlanes
+(~11 MB each).  The lit anodes and their charge agree with the art job (see
+topics/wcls-wires/envs/wcls/run/v8/compare-phlex.py in the xero area).

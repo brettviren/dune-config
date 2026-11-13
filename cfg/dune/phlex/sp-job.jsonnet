@@ -37,6 +37,8 @@ function(
     wct_log_level = "",
     gdml          = "",   // GDML file: geometry from GDML instead of the wires file
     anode_indices = [],   // several anodes in one job (see workflow.jsonnet)
+    drift         = "island",  // "job": drift once for all islands (sim only)
+    hydra         = false,     // with drift "job": skip anodes without depos
 )
 
 assert std.objectHas(plan, sp_input)
@@ -58,4 +60,6 @@ workflow(
     wct_log_level=wct_log_level,
     gdml=gdml,
     anode_indices=anode_indices,
+    drift=drift,
+    hydra=hydra,
 )

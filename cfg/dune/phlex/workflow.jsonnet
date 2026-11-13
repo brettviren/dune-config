@@ -39,6 +39,10 @@ local executors = {
         cpp: "wcph_deposet_to_frame",
         wct_plugins: ["WireCellPgraph", "WireCellGen", "WireCellSigProc", "WireCellAux"],
     },
+    deposet_to_deposet: {
+        cpp: "wcph_deposet_filter",   // registers node wcph_deposet_to_deposet
+        wct_plugins: ["WireCellPgraph", "WireCellGen", "WireCellAux"],
+    },
     frame_to_frame: {
         cpp: "wcph_frame_filter",   // registers node wcph_frame_to_frame
         wct_plugins: ["WireCellPgraph", "WireCellGen", "WireCellSigProc", "WireCellAux"],
@@ -65,6 +69,16 @@ function(
     // one sink ("sink<n>", writing out_file with "-a<n>" before ".npz") per
     // anode, all reading the same source (and geometry).  [] -> anode_index.
     anode_indices = [],
+    // Where depos are drifted (sim-sigproc only):
+    //   "island": each anode's WCT island drifts the event's depos itself;
+    //   "job":    one "drift" module drifts them once over the whole detector
+    //             (dune/wct/job/drift.jsonnet) and every island takes the
+    //             drifted depos and keeps its anode's (DepoSetFilter), as the
+    //             art multi-sim drifts once ahead of its fanout.
+    drift         = "island",
+    // With drift "job": an island whose anode has no depos skips sim and
+    // sigproc and gives an empty frame (WCT hydra: DeposOrBust + FrameSync).
+    hydra         = false,
 )
 
 local src = sources[in_kind];
@@ -75,6 +89,11 @@ assert std.objectHas(executors, exkey)
 local ex = executors[exkey];
 
 local exec_inst = "wct";
+
+assert drift == "island" || drift == "job" : 'drift must be "island" or "job", got "%s"' % drift;
+local drift_job = drift == "job";
+assert !drift_job || wct_job == "sim-sigproc" : 'drift "job" needs wct_job "sim-sigproc"';
+assert !hydra || drift_job : 'hydra needs drift "job"';
 
 local use_gdml = gdml != "";
 
@@ -104,11 +123,31 @@ local with_log = {
     [if wct_log_level != "" then "wct_log_level"]: wct_log_level,
 };
 
+// The detector-wide drift module (drift "job") and what the islands read.
+local drift_label = "drift";
+local drift_modules = if drift_job then {
+    [drift_label]: {
+        cpp: executors.deposet_to_deposet.cpp,
+        wct_config: "dune/wct/job/drift.jsonnet",
+        wct_plugins: executors.deposet_to_deposet.wct_plugins,
+        inputs: [src.output],
+        outputs: [{ suffix: "deposet" }],
+        wct_tla: {
+            detector: detname,
+            anode_index: "%d" % anode_index,
+            variant: variant,
+        } + (if use_gdml then { geometry: "phlex" } else {}),
+    } + with_log + geo_exec,
+} else {};
+local island_input = if drift_job
+    then { creator: drift_label, layer: src.output.layer, suffix: "deposet" }
+    else src.output;
+
 local executor(n) = {
     cpp: ex.cpp,
     wct_config: "dune/wct/job/" + wct_job + ".jsonnet",
     wct_plugins: ex.wct_plugins,
-    inputs: [src.output],
+    inputs: [island_input],
     // a transform's output creator/layer are fixed by Phlex (its module
     // label and its input's layer); only the suffix is set
     outputs: [{ suffix: snk.product }],
@@ -116,8 +155,14 @@ local executor(n) = {
         detector:    detname,
         anode_index: "%d" % n,  // phlex TLAs are strings
         variant:     variant,
-    } + (if use_gdml then { geometry: "phlex" } else {}),
+    } + (if use_gdml then { geometry: "phlex" } else {})
+      + (if drift_job then { drifted: "yes", hydra: if hydra then "yes" else "no" } else {}),
 } + with_log + geo_exec;
+
+// Signal processing output carries "gauss" and "wiener" traces; write them
+// as separate arrays (the frame sink's "*" would sum them per channel).
+local sink_tags = if out_kind == "frame-file" && std.member(["sigproc", "sim-sigproc"], wct_job)
+    then "gauss,wiener" else "";
 
 local per_anode_file(n) =
     if std.endsWith(out_file, ".npz")
@@ -138,9 +183,9 @@ local per_anode_file(n) =
 
     modules: (if std.length(anode_indices) == 0 then {
         [exec_inst]: executor(anode_index),
-        sink: snk.make(out_file, exec_inst),
+        sink: snk.make(out_file, exec_inst, sink_tags),
     } else std.foldl(function(acc, n) acc + {
         ["wct%d" % n]: executor(n),
-        ["sink%d" % n]: snk.make(per_anode_file(n), "wct%d" % n),
-    }, anode_indices, {})) + geo_modules,
+        ["sink%d" % n]: snk.make(per_anode_file(n), "wct%d" % n, sink_tags),
+    }, anode_indices, {})) + geo_modules + drift_modules,
 }

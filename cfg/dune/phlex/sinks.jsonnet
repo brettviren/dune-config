@@ -11,13 +11,14 @@
 
 local wcph_sink(product, wct_config) = {
     product:: product,
-    make(filename, input_from):: {
+    // tags: trace tags to write, comma separated ("" -> the sink's default).
+    make(filename, input_from, tags=""):: {
         cpp: "wcph_" + product + "_sink",
         wct_config: wct_config,
         wct_plugins: ["WireCellPgraph", "WireCellSio"],
         inputs: [{ creator: input_from, layer: "event", suffix: product }],
         outputs: [],
-        wct_tla: { outname: filename },
+        wct_tla: { outname: filename } + (if tags == "" then {} else { tags: tags }),
     },
 };
 

@@ -66,4 +66,23 @@ assert sinks["deposet-file"].make("x.npz", "wct").cpp == "wcph_deposet_sink"
        : "deposet sink module in registry";
 assert sources["daq-hdf"].gated == true : "daq-hdf source is marked gated";
 
+
+// --- drift once for all islands, hydra, SP sink tags -------------------------
+local dj = workflow(
+    detname="fdvd", wct_job="sim-sigproc", variant="v8",
+    in_file="depos.npz", out_file="sig.npz",
+    anode_indices=[3, 200], drift="job", hydra=true,
+);
+assert dj.modules.drift.cpp == "wcph_deposet_filter" : "drift module is a deposet->deposet executor";
+assert dj.modules.drift.wct_config == "dune/wct/job/drift.jsonnet" : "drift module runs drift.jsonnet";
+assert dj.modules.drift.inputs == [{ creator: "input", layer: "event", suffix: "deposet" }]
+       : "drift reads the source";
+assert dj.modules.wct3.inputs == [{ creator: "drift", layer: "event", suffix: "deposet" }]
+       : "islands read the drifted depos";
+assert dj.modules.wct200.wct_tla.drifted == "yes" && dj.modules.wct200.wct_tla.hydra == "yes"
+       : "islands told depos are drifted, hydra on";
+assert dj.modules.sink3.wct_tla.tags == "gauss,wiener" : "SP output written per tag";
+assert !std.objectHas(sim_sp.modules, "drift") && !std.objectHas(sim_sp.modules.wct.wct_tla, "drifted")
+       : "default: islands drift themselves";
+
 { ok: true }

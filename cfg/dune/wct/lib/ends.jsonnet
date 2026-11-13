@@ -45,15 +45,39 @@ local bnode(inode) = { type: inode.type, name: inode.name, data: {} };
     // Processing bodies (port-bearing sub-graphs).
     // -----------------------------------------------------------------------
     bodies:: {
-        // deposet -> frame: drift + electronics simulation + digitization
-        sim(P):: {
+        // deposet -> frame: drift + electronics simulation + digitization.
+        // drifted=true: the depos are already drifted (by a detector-wide
+        // drift, see drift below); select this anode's instead of drifting.
+        sim(P, drifted=false):: {
             pnodes: [
-                g.filter(P.setdrifter),
+                g.filter(if drifted then P.depofilter else P.setdrifter),
                 g.filter(P.transform),
                 g.filter(P.reframer),
                 g.filter(P.addnoise),
                 g.filter(P.digitizer),
             ],
+        },
+
+        // deposet -> deposet: drift over the whole detector (job/drift.jsonnet)
+        drift(P):: {
+            pnodes: [g.filter(P.setdrifter_detector)],
+        },
+
+        // Hydra: wrap a deposet -> frame body so that an empty depo set
+        // skips it and yields an empty frame (DeposOrBust + FrameSync).
+        // body : { pnodes } whose first takes depos and last gives a frame.
+        hydra(P, body):: {
+            local work = g.pipeline(body.pnodes, "hydra_work_" + P.a.name),
+            local dorb = g.node(P.deposorbust, 1, 2),
+            local sync = g.node(P.framesync, 2, 1),
+            pnodes: [g.intern(
+                innodes=[dorb], outnodes=[sync], centernodes=[work],
+                edges=[
+                    g.pg.edge(dorb, work, 0, 0),
+                    g.pg.edge(work, sync, 0, 0),
+                    g.pg.edge(dorb, sync, 1, 1),
+                ],
+                name="hydra_" + P.a.name)],
         },
 
         // frame -> frame: signal processing

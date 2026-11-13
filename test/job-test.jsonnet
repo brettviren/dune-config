@@ -81,4 +81,51 @@ assert chain(cfg_splat) == [
     "Reframer->FrameBoundarySink",
 ] : "splat chain";
 
+// --- shared services across islands (anodes) --------------------------------
+// Anode-independent services are named by content, so two anodes (two WCT
+// islands of one Phlex job) with the same field response etc. name the same
+// instance; per-anode state keeps per-anode names; RNG seeds differ per anode.
+local cfg_v0   = sim_sigproc(detector="fdvd", anode_index="0", variant="v8");
+local cfg_v1   = sim_sigproc(detector="fdvd", anode_index="1", variant="v8");
+local cfg_v200 = sim_sigproc(detector="fdvd", anode_index="200", variant="v8");
+local names(cfg, t) = [c.name for c in cfg if c.type == t];
+local shared_types = ["FftwDFT", "FieldResponse", "ColdElecResponse", "PlaneImpactResponse", "WireSchemaFile"];
+assert std.all([names(cfg_v0, t) == names(cfg_v1, t) for t in shared_types])
+       : "anodes 0 and 1 (same volume) share DFT, FR, elec, PIRs, wires";
+assert names(cfg_v0, "FieldResponse") == names(cfg_v200, "FieldResponse")
+       && names(cfg_v0, "PlaneImpactResponse") != names(cfg_v200, "PlaneImpactResponse")
+       : "bottom/top anodes share the FR but not the PIRs (different electronics)";
+assert names(cfg_v0, "AnodePlane") != names(cfg_v1, "AnodePlane")
+       && names(cfg_v0, "Random") != names(cfg_v1, "Random")
+       && names(cfg_v0, "EmpiricalNoiseModel") != names(cfg_v1, "EmpiricalNoiseModel")
+       : "anode, RNG and noise model stay per anode";
+local seeds(cfg) = [c.data.seeds for c in cfg if c.type == "Random"][0];
+assert seeds(cfg_v0) != seeds(cfg_v1) : "per-anode RNG seeds";
+
+// --- detector-wide drift + drifted/hydra islands -----------------------------
+local drift = import "dune/wct/job/drift.jsonnet";
+local cfg_drift = drift(detector="fdvd", variant="v8");
+assert chain(cfg_drift) == [
+    "DepoSetBoundarySource->DepoSetDrifter",
+    "DepoSetDrifter->DepoSetBoundarySink",
+] : "drift chain";
+assert std.length([c for c in cfg_drift if c.type == "Drifter"][0].data.xregions) == 2
+       : "detector drift covers both FD-VD drift volumes";
+local cfg_hy = sim_sigproc(detector="fdvd", anode_index="120", variant="v8", drifted="yes", hydra="yes");
+assert std.sort(chain(cfg_hy)) == std.sort([
+    "DepoSetBoundarySource->DepoSetFilter",
+    "DepoSetFilter->DeposOrBust",
+    "DeposOrBust->DepoTransform",
+    "DeposOrBust->FrameSync",
+    "DepoTransform->Reframer",
+    "Reframer->AddNoise",
+    "AddNoise->Digitizer",
+    "Digitizer->OmnibusSigProc",
+    "OmnibusSigProc->FrameSync",
+    "FrameSync->FrameBoundarySink",
+]) : "drifted + hydra island chain";
+assert count(cfg_hy, "Drifter") == 0 : "a drifted island does not drift";
+assert [c.data.frame_ident for c in cfg_hy if c.type == "DepoTransform"] == ["deposet"]
+       : "frames name their event";
+
 { ok: true }
