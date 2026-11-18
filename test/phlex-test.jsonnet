@@ -120,6 +120,13 @@ assert geo("pdvd").sources.gdml.gdml == "protodunevd_v4_refactored.gdml"
 assert geo("fdvd").modules.geometry.sorter == "cru60d" : "fdvd GDML";
 assert workflow(detname="fdvd", wct_job="sim-sigproc", gdml="default", variant="v6").sources.gdml.gdml
        == "dunevd10kt_3view_30deg_v6_refactored.gdml" : "GDML by variant";
+assert geo("fdhd").sources.gdml.gdml == "dune10kt_v6_refactored.gdml"
+       && geo("fdhd").modules.geometry.readout == "apa" && geo("fdhd").modules.geometry.sorter == "apa"
+       : "fdhd GDML: full detector, APA channel map and sorter";
+assert [workflow(detname="fdhd", wct_job="sim-sigproc", gdml="default", variant=v).sources.gdml.gdml
+        for v in ["1x2x6", "1x2x2"]]
+       == ["dune10kt_v6_refactored_1x2x6.gdml", "dune10kt_v6_refactored_1x2x2.gdml"]
+       : "fdhd workspace GDML by variant";
 assert geo("pdhd").modules.wct.geometry.drift_planes.suffix == "drift_planes" : "drift planes product";
 local explicit = workflow(detname="pdhd", wct_job="sim-sigproc", gdml="my.gdml", gdml_sorter="cru60d");
 assert explicit.sources.gdml.gdml == "my.gdml" && explicit.modules.geometry.sorter == "cru60d"

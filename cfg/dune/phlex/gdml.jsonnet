@@ -19,6 +19,13 @@
 //         GeoObjectSorterCRU60D with SortTPCPDVD)
 //   fdvd  dunevd10kt_3view_30deg_v8_full10kt_ggd.gdml vs
 //         fdvd-v8-fromgeo-pairtpc (CRPWireReadoutGeom, GeoObjectSorterCRU60D)
+//   fdhd  dune10kt_v6_refactored.gdml vs dune10kt_v7_refactored (833100 wires),
+//         dune10kt_v6_refactored_1x2x6.gdml vs dune10kt-1x2x6-wires-larsoft-v1,
+//         dune10kt_v6_refactored_1x2x2.gdml vs its anodes 0-3 (dunecore
+//         DuneApaWireReadoutGeom + WireReadoutSorterAPA, GeoObjectSorterAPA:
+//         names containing "dune10kt", as PDHD's but without its optical
+//         channel overrides).  The full GDML's 50 wall-side faces come out
+//         insensitive.
 
 {
     pdhd: {
@@ -40,6 +47,16 @@
         },
         readout: "crp",
         sorter: "cru60d",
+        grouping: "pair-tpc",
+    },
+    fdhd: {
+        files: {
+            "1x2x6": "dune10kt_v6_refactored_1x2x6.gdml",
+            "1x2x2": "dune10kt_v6_refactored_1x2x2.gdml",
+            default: "dune10kt_v6_refactored.gdml",
+        },
+        readout: "apa",
+        sorter: "apa",
         grouping: "pair-tpc",
     },
 }

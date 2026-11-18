@@ -12,6 +12,7 @@ maps canonical `detname -> function`.
 | `pdsp` | ProtoDUNE-SP | 6 APAs | `ideal` | dunereco `pdsp/` |
 | `pdvd` | ProtoDUNE-VD | 8 (0-3 bottom, 4-7 top) | `ideal` | dunereco `protodunevd/` |
 | `fdvd` | DUNE FD-VD (v6, 2x8x40) | 320 CRUs (0-159 bottom, 160-319 top) | `ideal` (BDE 14 mV/fC), `bde7d8` (7.8 mV/fC) | dunereco `dune10kt-vd/` |
+| `fdhd` | DUNE FD-HD (dune10kt v6) | 150 APAs (`ideal`), 12 (`1x2x6`), 4 (`1x2x2`) | geometry only: `ideal` (full), `1x2x6`, `1x2x2` | dunereco `dune10kt-1x2x6/`, `dune10kt-hd/` |
 
 ## What is per anode
 
@@ -27,4 +28,3 @@ Timing that follows from the response plane (ductor window, reframer `tbin`,
 PIR padding, the splat window) is derived per anode in `job/parts.jsonnet`;
 detectors do not repeat it.
 
-FD-HD (beads ddm-4pz.14) is not yet here.

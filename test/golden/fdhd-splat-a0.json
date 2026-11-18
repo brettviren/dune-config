@@ -1,0 +1,195 @@
+[
+   {
+      "_pnode": {
+         "nin": 0,
+         "nout": 1
+      },
+      "data": { },
+      "name": "wcphlex_deposet_source",
+      "type": "DepoSetBoundarySource"
+   },
+   {
+      "data": {
+         "generator": "default",
+         "seeds": [
+            0,
+            0,
+            0,
+            0,
+            0
+         ]
+      },
+      "name": "rng_apa0",
+      "type": "Random"
+   },
+   {
+      "data": {
+         "DL": 3.9999999999999998e-07,
+         "DT": 8.8000000000000015e-07,
+         "drift_speed": 0.0016056299999999998,
+         "fluctuate": true,
+         "lifetime": 10400000,
+         "rng": "Random:rng_apa0",
+         "xregions": [
+            {
+               "anode": -7230.9944999999998,
+               "cathode": -3636.8525,
+               "response": -7140.5144999999993
+            },
+            {
+               "anode": -7310.0654999999997,
+               "cathode": -10904.2075,
+               "response": -7400.5455000000002
+            }
+         ]
+      },
+      "name": "drifter_apa0",
+      "type": "Drifter"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "drifter": "Drifter:drifter_apa0"
+      },
+      "name": "deposet_drifter_apa0",
+      "type": "DepoSetDrifter"
+   },
+   {
+      "data": {
+         "filename": "dune10kt_v7_refactored.json.bz2"
+      },
+      "name": "wires-8bd299ef77",
+      "type": "WireSchemaFile"
+   },
+   {
+      "data": {
+         "faces": [
+            {
+               "anode": -7230.9944999999998,
+               "cathode": -3636.8525,
+               "response": -7140.5144999999993
+            },
+            {
+               "anode": -7310.0654999999997,
+               "cathode": -10904.2075,
+               "response": -7400.5455000000002
+            }
+         ],
+         "ident": 0,
+         "nimpacts": 10,
+         "wire_schema": "WireSchemaFile:wires-8bd299ef77"
+      },
+      "name": "apa0",
+      "type": "AnodePlane"
+   },
+   {
+      "data": {
+         "filename": "dune-garfield-1d60563.json.bz2"
+      },
+      "name": "fr-af05cc3235",
+      "type": "FieldResponse"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "anode": "AnodePlane:apa0",
+         "field_response": "FieldResponse:fr-af05cc3235",
+         "reference_time": 0,
+         "smear_long": [
+            2.6918623639802211,
+            2.6750200122535057,
+            2.7137567141154055
+         ],
+         "smear_tran": [
+            0.73772188757196888,
+            0.71577645203938822,
+            0.13980698710556544
+         ],
+         "sparse": true,
+         "tick": 500,
+         "window_duration": 3062500,
+         "window_start": -62280.849261660536
+      },
+      "name": "splat_apa0",
+      "type": "DepoFluxSplat"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "anode": "AnodePlane:apa0",
+         "fill": 0,
+         "nticks": 6000,
+         "tags": [ ],
+         "tbin": 125,
+         "toffset": 0
+      },
+      "name": "reframer_apa0",
+      "type": "Reframer"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 0
+      },
+      "data": { },
+      "name": "wcphlex_frame_sink",
+      "type": "FrameBoundarySink"
+   },
+   {
+      "data": {
+         "edges": [
+            {
+               "head": {
+                  "node": "DepoSetDrifter:deposet_drifter_apa0",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoSetBoundarySource:wcphlex_deposet_source",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "DepoFluxSplat:splat_apa0",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoSetDrifter:deposet_drifter_apa0",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "Reframer:reframer_apa0",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoFluxSplat:splat_apa0",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "FrameBoundarySink:wcphlex_frame_sink",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "Reframer:reframer_apa0",
+                  "port": 0
+               }
+            }
+         ]
+      },
+      "name": "wcphlex_pgrapher",
+      "type": "Pgrapher"
+   }
+]

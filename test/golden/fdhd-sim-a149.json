@@ -1,0 +1,331 @@
+[
+   {
+      "_pnode": {
+         "nin": 0,
+         "nout": 1
+      },
+      "data": { },
+      "name": "wcphlex_deposet_source",
+      "type": "DepoSetBoundarySource"
+   },
+   {
+      "data": {
+         "generator": "default",
+         "seeds": [
+            0,
+            0,
+            0,
+            0,
+            149
+         ]
+      },
+      "name": "rng_apa149",
+      "type": "Random"
+   },
+   {
+      "data": {
+         "DL": 3.9999999999999998e-07,
+         "DT": 8.8000000000000015e-07,
+         "drift_speed": 0.0016056299999999998,
+         "fluctuate": true,
+         "lifetime": 10400000,
+         "rng": "Random:rng_apa149",
+         "xregions": [
+            {
+               "anode": 7310.0654999999997,
+               "cathode": 10904.2075,
+               "response": 7400.5455000000002
+            },
+            {
+               "anode": 7230.9944999999998,
+               "cathode": 3636.8525,
+               "response": 7140.5144999999993
+            }
+         ]
+      },
+      "name": "drifter_apa149",
+      "type": "Drifter"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "drifter": "Drifter:drifter_apa149"
+      },
+      "name": "deposet_drifter_apa149",
+      "type": "DepoSetDrifter"
+   },
+   {
+      "data": {
+         "filename": "dune10kt_v7_refactored.json.bz2"
+      },
+      "name": "wires-8bd299ef77",
+      "type": "WireSchemaFile"
+   },
+   {
+      "data": {
+         "faces": [
+            {
+               "anode": 7310.0654999999997,
+               "cathode": 10904.2075,
+               "response": 7400.5455000000002
+            },
+            {
+               "anode": 7230.9944999999998,
+               "cathode": 3636.8525,
+               "response": 7140.5144999999993
+            }
+         ],
+         "ident": 149,
+         "nimpacts": 10,
+         "wire_schema": "WireSchemaFile:wires-8bd299ef77"
+      },
+      "name": "apa149",
+      "type": "AnodePlane"
+   },
+   {
+      "data": { },
+      "name": "dft-22e67cc3ae",
+      "type": "FftwDFT"
+   },
+   {
+      "data": {
+         "filename": "dune-garfield-1d60563.json.bz2"
+      },
+      "name": "fr-af05cc3235",
+      "type": "FieldResponse"
+   },
+   {
+      "data": {
+         "gain": 2.2430470818000003e-12,
+         "nticks": 6125,
+         "postgain": 1.1365000000000001,
+         "shaping": 2200,
+         "tick": 500
+      },
+      "name": "elec-77e17c0345",
+      "type": "ColdElecResponse"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-af05cc3235",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 6125,
+         "overall_short_padding": 124561.69852332107,
+         "plane": 0,
+         "short_responses": [
+            "ColdElecResponse:elec-77e17c0345"
+         ],
+         "tick": 500
+      },
+      "name": "pir0-a6f441ec83",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-af05cc3235",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 6125,
+         "overall_short_padding": 124561.69852332107,
+         "plane": 1,
+         "short_responses": [
+            "ColdElecResponse:elec-77e17c0345"
+         ],
+         "tick": 500
+      },
+      "name": "pir1-86b481b778",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "data": {
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "field_response": "FieldResponse:fr-af05cc3235",
+         "long_padding": 1500000,
+         "long_responses": [ ],
+         "nticks": 6125,
+         "overall_short_padding": 124561.69852332107,
+         "plane": 2,
+         "short_responses": [
+            "ColdElecResponse:elec-77e17c0345"
+         ],
+         "tick": 500
+      },
+      "name": "pir2-ff0adacb9a",
+      "type": "PlaneImpactResponse"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "anode": "AnodePlane:apa149",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "drift_speed": 0.0016056299999999998,
+         "first_frame_number": 0,
+         "fluctuate": true,
+         "frame_ident": "deposet",
+         "nsigma": 3,
+         "pirs": [
+            "PlaneImpactResponse:pir0-a6f441ec83",
+            "PlaneImpactResponse:pir1-86b481b778",
+            "PlaneImpactResponse:pir2-ff0adacb9a"
+         ],
+         "readout_time": 3062500,
+         "rng": "Random:rng_apa149",
+         "start_time": -62280.849261660536,
+         "tick": 500
+      },
+      "name": "transform_apa149",
+      "type": "DepoTransform"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "anode": "AnodePlane:apa149",
+         "fill": 0,
+         "nticks": 6000,
+         "tags": [ ],
+         "tbin": 125,
+         "toffset": 0
+      },
+      "name": "reframer_apa149",
+      "type": "Reframer"
+   },
+   {
+      "data": {
+         "anode": "AnodePlane:apa149",
+         "chanstat": "",
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "nsamples": 6000,
+         "period": 500,
+         "spectra_file": "protodune-noise-spectra-v1.json.bz2",
+         "wire_length_scale": 10
+      },
+      "name": "noise_model_apa149",
+      "type": "EmpiricalNoiseModel"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "dft": "FftwDFT:dft-22e67cc3ae",
+         "model": "EmpiricalNoiseModel:noise_model_apa149",
+         "nsamples": 6000,
+         "replacement_percentage": 0.02,
+         "rng": "Random:rng_apa149"
+      },
+      "name": "addnoise_apa149",
+      "type": "AddNoise"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 1
+      },
+      "data": {
+         "anode": "AnodePlane:apa149",
+         "baselines": [
+            1.0034e-06,
+            1.0034e-06,
+            5.0770000000000003e-07
+         ],
+         "fullscale": [
+            1.9999999999999999e-07,
+            1.5999999999999999e-06
+         ],
+         "gain": 1,
+         "resolution": 14
+      },
+      "name": "digitizer_apa149",
+      "type": "Digitizer"
+   },
+   {
+      "_pnode": {
+         "nin": 1,
+         "nout": 0
+      },
+      "data": { },
+      "name": "wcphlex_frame_sink",
+      "type": "FrameBoundarySink"
+   },
+   {
+      "data": {
+         "edges": [
+            {
+               "head": {
+                  "node": "DepoSetDrifter:deposet_drifter_apa149",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoSetBoundarySource:wcphlex_deposet_source",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "DepoTransform:transform_apa149",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoSetDrifter:deposet_drifter_apa149",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "Reframer:reframer_apa149",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "DepoTransform:transform_apa149",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "AddNoise:addnoise_apa149",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "Reframer:reframer_apa149",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "Digitizer:digitizer_apa149",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "AddNoise:addnoise_apa149",
+                  "port": 0
+               }
+            },
+            {
+               "head": {
+                  "node": "FrameBoundarySink:wcphlex_frame_sink",
+                  "port": 0
+               },
+               "tail": {
+                  "node": "Digitizer:digitizer_apa149",
+                  "port": 0
+               }
+            }
+         ]
+      },
+      "name": "wcphlex_pgrapher",
+      "type": "Pgrapher"
+   }
+]

@@ -90,6 +90,7 @@ detector's WCT wires file channel for channel (wire-cell-phlex
 | pdhd    | protodunehd_v8_refactored       | apa     | apa           | protodunehd-wires-larsoft-v1 |
 | pdvd    | protodunevd_v4_refactored       | crp     | cru60d-pdvd   | protodunevd-wires-larsoft-v3 |
 | fdvd    | dunevd10kt_3view_30deg_v8_full10kt_ggd (v6: _v6_refactored) | crp | cru60d | fdvd-v8-fromgeo-pairtpc |
+| fdhd    | dune10kt_v6_refactored (1x2x6, 1x2x2: _v6_refactored_1x2x6, _1x2x2) | apa | apa | dune10kt_v7_refactored, dune10kt-1x2x6-wires-larsoft-v1 |
 
 `gdml_readout`, `gdml_sorter`, `gdml_grouping` override them.  The WCT side of
 the drift planes is per detector, `drift_planes` in
@@ -101,6 +102,11 @@ the drift planes is per detector, `drift_planes` in
   longest (wcph_gdml_geometry `min_drift_fraction`) is insensitive and
   FacadeDriftPlanes gives a null face for it, as the old Jsonnet faces lists
   did, and no xregion.  (The file-mode PDHD faces keep both faces active.)
+- fdhd: as pdhd (the same APA), anode cut 9.52 mm from the collection
+  plane.  The full GDML's 50 wall-side faces (16 cm of LAr between the
+  outer APAs and the cryostat) are insensitive.  The file-mode faces follow
+  dunereco dune10kt-hd and give them a full 3.6 m drift instead, so the two
+  geometries differ only for depos beyond the outer APA planes.
 - pdvd: per X. Ning's review of the PDVD config (one-sided CRP): anode cut at
   the CRP shield plane 16.4 mm from W, response plane 18.1 cm from W (the
   field response origin), cathode at |x| = 3 cm; the file-mode faces are the
